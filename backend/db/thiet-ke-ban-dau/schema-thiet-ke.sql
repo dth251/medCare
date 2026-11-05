@@ -1,3 +1,7 @@
+-- *************************************************************************
+-- LƯU Ý: Đây là lược đồ của THIẾT KẾ BAN ĐẦU, giữ lại để tham khảo/báo cáo.
+-- Code hiện tại KHÔNG dùng file này; lược đồ thực tế xem ../schema.sql
+-- *************************************************************************
 -- =========================================================================
 -- HỆ THỐNG QUẢN LÝ PHÒNG KHÁM TƯ - MODULE M2 (POSTGRESQL SCHEMA)
 -- Chuẩn hóa theo thiết kế CSDL (Pha thiết kế CSDL liên quan)
