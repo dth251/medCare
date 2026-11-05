@@ -1,0 +1,36 @@
+/* ==========================================================================
+   MODULE 3: THANH TOÁN TIỀN CÔNG THEO TUẦN (M2.3 - TT01 đến TT08)
+   ========================================================================== */
+
+/* Thẻ chọn hình thức thanh toán */
+.payment-method-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.payment-method-card.active {
+  border-color: #10b981;
+  background-color: rgba(240, 253, 244, 0.7);
+}
+
+/* Con dấu và watermark phiếu lương */
+.salary-stamp-box {
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+}
+
+/* Badge trạng thái chấm công */
+.badge-chamcong-du {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.badge-chamcong-thieu {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-chamcong-dieuchinh {
+  background-color: #fef9c3;
+  color: #a16207;
+}

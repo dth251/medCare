@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <script>/* MedCare Seamless SPA Bridge */ window.location.replace('../index.html#screen-TT05');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đối soát & Xử lý khiếu nại (TT05) - Phòng Khám MedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/module3-thanhtoan.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+
+  <header class="no-print bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-3">
+        <a href="../chon-module.html" class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-base text-white shadow">
+          <i class="fa-solid fa-hospital"></i>
+        </a>
+        <div>
+          <div class="font-semibold text-sm tracking-wide flex items-center gap-2">
+            Phòng Khám Tư MedCare
+            <span class="bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded text-[10px] font-mono">MedCare</span>
+          </div>
+          <div class="text-slate-400 text-[11px]">Hệ Thống Quản Lý Ca Trực & Quyết Toán Y Tế</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-slate-400 font-medium hidden sm:inline"><i class="fa-solid fa-desktop mr-1"></i>Trang:</span>
+        <select onchange="window.location.href=this.value" class="bg-slate-800 text-sky-200 border border-slate-600 rounded px-2.5 py-1 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          <optgroup label="1. Màn hình chung (Common)">
+            <option value="../dang-nhap.html" >C01 - Đăng nhập (dang-nhap.html)</option>
+            <option value="../trangchu/nhan-su.html" >C02 - Trang chủ Nhân sự (trangchu/nhan-su.html)</option>
+            <option value="../trangchu/quan-ly.html" >C03 - Trang chủ Quản lý (trangchu/quan-ly.html)</option>
+            <option value="../trangchu/ke-toan.html" >C04 - Trang chủ Kế toán (trangchu/ke-toan.html)</option>
+            <option value="../chon-module.html" >C05 - Chọn module (chon-module.html)</option>
+          </optgroup>
+          <optgroup label="2. Module 1: Đăng ký ca theo tuần">
+            <option value="../dangky/lich-tuan.html" >DK01 - Lưới đăng ký ca trực (dangky/lich-tuan.html)</option>
+            <option value="../dangky/fragments/xac-nhan.html" >DK02 - Xác nhận lưu đăng ký (xac-nhan.html)</option>
+          </optgroup>
+          <optgroup label="3. Module 2: Lên lịch làm việc theo tuần">
+            <option value="../phancong/danh-sach-khoa.html" >PC01 - Danh sách khoa & Tiến độ (phancong/danh-sach-khoa.html)</option>
+            <option value="../phancong/lich-khoa.html" >PC02 - Lưới phân ca chi tiết (phancong/lich-khoa.html)</option>
+            <option value="../phancong/fragments/chon-nhan-su.html" >PC03 - Chọn nhân sự cho ca (chon-nhan-su.html)</option>
+            <option value="../phancong/fragments/xac-nhan-dieu-dong.html" >PC04 - Cảnh báo điều động ngoài đăng ký (xac-nhan-dieu-dong.html)</option>
+            <option value="../phancong/fragments/xac-nhan-cong-bo.html" >PC05 - Công bố lịch tuần (xac-nhan-cong-bo.html)</option>
+          </optgroup>
+          <optgroup label="4. Module 3: Thanh toán tiền công tuần">
+            <option value="../thanhtoan/danh-sach-khoa.html" >TT01 - Danh sách khoa thanh toán (thanhtoan/danh-sach-khoa.html)</option>
+            <option value="../thanhtoan/nhan-su-khoa.html" >TT02 - Danh sách nhân sự của khoa (thanhtoan/nhan-su-khoa.html)</option>
+            <option value="../thanhtoan/cham-cong.html" >TT03 - Bảng chấm công chi tiết (thanhtoan/cham-cong.html)</option>
+            <option value="../thanhtoan/fragments/gui-khieu-nai.html" >TT04 - Gửi khiếu nại sai lệch (gui-khieu-nai.html)</option>
+            <option value="../thanhtoan/xu-ly-khieu-nai.html" selected>TT05 - Đối soát & Xử lý khiếu nại (xu-ly-khieu-nai.html)</option>
+            <option value="../thanhtoan/chi-tra.html" >TT06 - Chọn hình thức thanh toán (chi-tra.html)</option>
+            <option value="../thanhtoan/phieu-luong.html" >TT07 - Xuất phiếu lương chi tiết (phieu-luong.html)</option>
+            <option value="../thanhtoan/phieu-cua-toi.html" >TT08 - Lịch sử phiếu lương của tôi (phieu-cua-toi.html)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="../dang-nhap.html" class="text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <div class="max-w-5xl mx-auto space-y-5">
+      <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">Đối soát & Xử lý khiếu nại (TT05)</span>
+          <h2 class="text-base font-bold text-slate-800 mt-1">Thẩm Tra Khiếu Nại & Điều Chỉnh Thù Lao</h2>
+        </div>
+        <a href="cham-cong.html" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Quay lại</a>
+      </div>
+
+      <!-- 2-Column Comparison Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-code-compare text-indigo-600"></i> Bảng đối soát 2 cột: Lịch phân ca dự kiến vs Dữ liệu điểm danh thực tế
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="bg-sky-50/70 border border-sky-200 rounded-xl p-4 space-y-2">
+            <span class="font-bold text-sky-900 block border-b border-sky-200 pb-1">Dữ liệu lịch phân ca</span>
+            <div>Thời gian: <strong>Thứ 5 (03/09) – Ca Tối</strong></div>
+            <div>Phân công: <strong>Có phân công (BS. Nguyễn Văn A)</strong></div>
+            <div>Loại ca: <strong>Ngoài giờ • Hệ số thù lao: 2.0</strong></div>
+          </div>
+          <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-4 space-y-2">
+            <span class="font-bold text-rose-900 block border-b border-rose-200 pb-1">Dữ liệu điểm danh máy chấm công</span>
+            <div>Check-in/out: <strong class="text-rose-600">Không có bản ghi</strong></div>
+            <div>Minh chứng: <strong>Xác nhận trực qua camera & sổ bàn giao ca</strong></div>
+            <div>Kết luận đối soát: <strong class="text-emerald-700">Hợp lệ để bổ sung công trực</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adjustment Form -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h3 class="font-bold text-slate-800 text-xs">Lập biên bản điều chỉnh thù lao</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          <div><label class="block text-slate-600 font-semibold mb-1">Loại ca điều chỉnh</label><select class="w-full border rounded p-2"><option>Ngoài giờ (Hệ số 2.0)</option></select></div>
+          <div><label class="block text-slate-600 font-semibold mb-1">Số ca điều chỉnh</label><input type="number" value="1" class="w-full border rounded p-2 font-bold"></div>
+          <div><label class="block text-slate-600 font-semibold mb-1">Phụ cấp bổ sung (VNĐ)</label><input type="number" value="0" class="w-full border rounded p-2"></div>
+          <div><label class="block text-slate-600 font-semibold mb-1">Khấu trừ (VNĐ)</label><input type="number" value="0" class="w-full border rounded p-2"></div>
+        </div>
+        <div>
+          <label class="block text-slate-600 font-semibold text-xs mb-1">Lý do điều chỉnh (Bắt buộc) *</label>
+          <textarea rows="2" class="w-full border rounded p-2 text-xs">Xác nhận có mặt trực ca Tối 03/09 qua sổ bàn giao ca trực và camera an ninh phòng khám; bổ sung 01 ca ngoài giờ hệ số 2.0.</textarea>
+        </div>
+        <div class="pt-3 border-t flex justify-between">
+          <a href="cham-cong.html" class="px-4 py-2 bg-rose-50 text-rose-700 rounded text-xs font-semibold">Từ chối khiếu nại</a>
+          <a href="chi-tra.html" class="px-5 py-2 bg-emerald-600 text-white rounded text-xs font-bold shadow">
+            Lưu biên bản & Chuyển sang thanh toán (TT06) &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="no-print bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+    Phân tích & Thiết kế HTTT • Học viện Công nghệ Bưu chính Viễn thông (PTIT) • Nhóm 10 - E23HTTT03
+  </footer>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/module3-thanhtoan.js"></script>
+</body>
+</html>

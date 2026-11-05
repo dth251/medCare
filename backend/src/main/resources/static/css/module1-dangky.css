@@ -1,0 +1,37 @@
+/* ==========================================================================
+   MODULE 1: ĐĂNG KÝ LỊCH LÀM VIỆC THEO TUẦN (M2.1 - DK01, DK02)
+   ========================================================================== */
+
+/* Lưới ma trận chọn ca trực */
+#dkMatrixBody tr:hover {
+  background-color: rgba(248, 250, 252, 0.8);
+}
+
+.shift-cell-btn {
+  transition: all 0.15s ease-in-out;
+}
+
+.shift-cell-btn:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+/* Ca chính và Ca ngoài giờ */
+.badge-ca-chinh {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-ca-ngoai-gio {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+/* Ô bị vô hiệu hóa khi đủ 2 ca/ngày */
+.shift-disabled-cell {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}

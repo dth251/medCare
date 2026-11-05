@@ -1,0 +1,11 @@
+# Chuẩn hóa xuống dòng: script Windows giữ CRLF, script Unix giữ LF
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+gradlew text eol=lf
+*.sh text eol=lf
+
+# File nhị phân
+*.jar binary
+*.docx binary
+*.png binary

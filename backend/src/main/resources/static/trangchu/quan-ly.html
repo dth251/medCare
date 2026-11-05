@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <script>/* MedCare Seamless SPA Bridge */ window.location.replace('../index.html#screen-C03');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang chủ Quản lý (C03) - Phòng Khám MedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+
+  <!-- TOP BAR: DEMO NAVIGATOR -->
+  <header class="no-print bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-3">
+        <a href="../chon-module.html" class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-base text-white shadow">
+          <i class="fa-solid fa-hospital"></i>
+        </a>
+        <div>
+          <div class="font-semibold text-sm tracking-wide flex items-center gap-2">
+            Phòng Khám Tư MedCare
+            <span class="bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded text-[10px] font-mono">MedCare</span>
+          </div>
+          <div class="text-slate-400 text-[11px]">Hệ Thống Quản Lý Ca Trực & Quyết Toán Y Tế</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-slate-400 font-medium hidden sm:inline"><i class="fa-solid fa-desktop mr-1"></i>Trang:</span>
+        <select onchange="window.location.href=this.value" class="bg-slate-800 text-sky-200 border border-slate-600 rounded px-2.5 py-1 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          <optgroup label="1. Màn hình chung (Common)">
+            <option value="../dang-nhap.html" >C01 - Đăng nhập (dang-nhap.html)</option>
+            <option value="../trangchu/nhan-su.html" >C02 - Trang chủ Nhân sự (trangchu/nhan-su.html)</option>
+            <option value="../trangchu/quan-ly.html" selected>C03 - Trang chủ Quản lý (trangchu/quan-ly.html)</option>
+            <option value="../trangchu/ke-toan.html" >C04 - Trang chủ Kế toán (trangchu/ke-toan.html)</option>
+            <option value="../chon-module.html" >C05 - Chọn module (chon-module.html)</option>
+          </optgroup>
+          <optgroup label="2. Module 1: Đăng ký ca theo tuần">
+            <option value="../dangky/lich-tuan.html" >DK01 - Lưới đăng ký ca trực (dangky/lich-tuan.html)</option>
+            <option value="../dangky/fragments/xac-nhan.html" >DK02 - Xác nhận lưu đăng ký (xac-nhan.html)</option>
+          </optgroup>
+          <optgroup label="3. Module 2: Lên lịch làm việc theo tuần">
+            <option value="../phancong/danh-sach-khoa.html" >PC01 - Danh sách khoa & Tiến độ (phancong/danh-sach-khoa.html)</option>
+            <option value="../phancong/lich-khoa.html" >PC02 - Lưới phân ca chi tiết (phancong/lich-khoa.html)</option>
+            <option value="../phancong/fragments/chon-nhan-su.html" >PC03 - Chọn nhân sự cho ca (chon-nhan-su.html)</option>
+            <option value="../phancong/fragments/xac-nhan-dieu-dong.html" >PC04 - Cảnh báo điều động ngoài đăng ký (xac-nhan-dieu-dong.html)</option>
+            <option value="../phancong/fragments/xac-nhan-cong-bo.html" >PC05 - Công bố lịch tuần (xac-nhan-cong-bo.html)</option>
+          </optgroup>
+          <optgroup label="4. Module 3: Thanh toán tiền công tuần">
+            <option value="../thanhtoan/danh-sach-khoa.html" >TT01 - Danh sách khoa thanh toán (thanhtoan/danh-sach-khoa.html)</option>
+            <option value="../thanhtoan/nhan-su-khoa.html" >TT02 - Danh sách nhân sự của khoa (thanhtoan/nhan-su-khoa.html)</option>
+            <option value="../thanhtoan/cham-cong.html" >TT03 - Bảng chấm công chi tiết (thanhtoan/cham-cong.html)</option>
+            <option value="../thanhtoan/fragments/gui-khieu-nai.html" >TT04 - Gửi khiếu nại sai lệch (gui-khieu-nai.html)</option>
+            <option value="../thanhtoan/xu-ly-khieu-nai.html" >TT05 - Đối soát & Xử lý khiếu nại (xu-ly-khieu-nai.html)</option>
+            <option value="../thanhtoan/chi-tra.html" >TT06 - Chọn hình thức thanh toán (chi-tra.html)</option>
+            <option value="../thanhtoan/phieu-luong.html" >TT07 - Xuất phiếu lương chi tiết (phieu-luong.html)</option>
+            <option value="../thanhtoan/phieu-cua-toi.html" >TT08 - Lịch sử phiếu lương của tôi (phieu-cua-toi.html)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="../dang-nhap.html" class="text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+      <div class="bg-gradient-to-r from-indigo-700 to-purple-700 rounded-2xl p-6 text-white shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border border-white/30">
+            <i class="fa-solid fa-clipboard-user"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl font-bold">QL. Lê Văn C</h2>
+              <span class="bg-white/20 text-white text-[11px] px-2 py-0.5 rounded-full">Mã NV: QL001</span>
+            </div>
+            <p class="text-indigo-100 text-xs mt-1">Chức vụ: Quản lý điều phối nhân sự y tế • Phòng Tổ chức Cán bộ</p>
+          </div>
+        </div>
+        <a href="../phancong/danh-sach-khoa.html" class="px-4 py-2.5 bg-white text-indigo-700 rounded-lg text-xs font-bold shadow hover:bg-indigo-50 transition">
+          <i class="fa-solid fa-calendar-days mr-1.5"></i> Lên lịch làm việc Tuần 37
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Tiến độ xếp lịch Tuần 37</div>
+          <div class="text-2xl font-bold text-indigo-600 mt-1">2 / 6 Khoa</div>
+          <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden"><div class="bg-indigo-600 h-full w-1/3"></div></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Nhân sự đã đăng ký ca</div>
+          <div class="text-2xl font-bold text-slate-800 mt-1">42 / 48 NS</div>
+          <span class="text-[10px] text-emerald-600 font-semibold">Tỷ lệ: 87.5%</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Số ca cần xếp</div>
+          <div class="text-2xl font-bold text-slate-800 mt-1">126 Ca trực</div>
+          <span class="text-[10px] text-slate-400">21 ca × 6 chuyên khoa</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Định mức bắt buộc</div>
+          <div class="text-sm font-bold text-amber-700 mt-1.5">1 BS chính + 2 Y tá</div>
+          <span class="text-[10px] text-slate-400">Tối đa 2 ca/ngày/người</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="no-print bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+    Phân tích & Thiết kế HTTT • Học viện Công nghệ Bưu chính Viễn thông (PTIT) • Nhóm 10 - E23HTTT03
+  </footer>
+  <script src="../js/api.js"></script>
+  <script src="../js/state.js"></script>
+  <script src="../js/app.js"></script>
+</body>
+</html>

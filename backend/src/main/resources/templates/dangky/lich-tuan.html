@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký ca trực theo tuần (DK01) - Phòng Khám MedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  
+  
+  <link rel="stylesheet" href="../../../../../../css/main.css">
+  <link rel="stylesheet" href="../../../../../../css/module1-dangky.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+
+  <header class="no-print bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-3">
+        <a href="../chon-module.html" class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-base text-white shadow">
+          <i class="fa-solid fa-hospital"></i>
+        </a>
+        <div>
+          <div class="font-semibold text-sm tracking-wide flex items-center gap-2">
+            Phòng Khám Tư MedCare
+            <span class="bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded text-[10px] font-mono">Module M2</span>
+          </div>
+          <div class="text-slate-400 text-[11px]">PTIT - E23HTTT03 - Nhóm 10</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-slate-400 font-medium hidden sm:inline"><i class="fa-solid fa-desktop mr-1"></i>Trang:</span>
+        <select onchange="window.location.href=this.value" class="bg-slate-800 text-sky-200 border border-slate-600 rounded px-2.5 py-1 text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          <optgroup label="1. Màn hình chung (Common)">
+            <option value="../dang-nhap.html" >C01 - Đăng nhập (dang-nhap.html)</option>
+            <option value="../trangchu/nhan-su.html" >C02 - Trang chủ Nhân sự (trangchu/nhan-su.html)</option>
+            <option value="../trangchu/quan-ly.html" >C03 - Trang chủ Quản lý (trangchu/quan-ly.html)</option>
+            <option value="../trangchu/ke-toan.html" >C04 - Trang chủ Kế toán (trangchu/ke-toan.html)</option>
+            <option value="../chon-module.html" >C05 - Chọn module (chon-module.html)</option>
+          </optgroup>
+          <optgroup label="2. Module 1: Đăng ký ca theo tuần">
+            <option value="../dangky/lich-tuan.html" selected>DK01 - Lưới đăng ký ca trực (dangky/lich-tuan.html)</option>
+            <option value="../dangky/fragments/xac-nhan.html" >DK02 - Xác nhận lưu đăng ký (xac-nhan.html)</option>
+          </optgroup>
+          <optgroup label="3. Module 2: Lên lịch làm việc theo tuần">
+            <option value="../phancong/danh-sach-khoa.html" >PC01 - Danh sách khoa & Tiến độ (phancong/danh-sach-khoa.html)</option>
+            <option value="../phancong/lich-khoa.html" >PC02 - Lưới phân ca chi tiết (phancong/lich-khoa.html)</option>
+            <option value="../phancong/fragments/chon-nhan-su.html" >PC03 - Chọn nhân sự cho ca (chon-nhan-su.html)</option>
+            <option value="../phancong/fragments/xac-nhan-dieu-dong.html" >PC04 - Cảnh báo điều động ngoài đăng ký (xac-nhan-dieu-dong.html)</option>
+            <option value="../phancong/fragments/xac-nhan-cong-bo.html" >PC05 - Công bố lịch tuần (xac-nhan-cong-bo.html)</option>
+          </optgroup>
+          <optgroup label="4. Module 3: Thanh toán tiền công tuần">
+            <option value="../thanhtoan/danh-sach-khoa.html" >TT01 - Danh sách khoa thanh toán (thanhtoan/danh-sach-khoa.html)</option>
+            <option value="../thanhtoan/nhan-su-khoa.html" >TT02 - Danh sách nhân sự của khoa (thanhtoan/nhan-su-khoa.html)</option>
+            <option value="../thanhtoan/cham-cong.html" >TT03 - Bảng chấm công chi tiết (thanhtoan/cham-cong.html)</option>
+            <option value="../thanhtoan/fragments/gui-khieu-nai.html" >TT04 - Gửi khiếu nại sai lệch (gui-khieu-nai.html)</option>
+            <option value="../thanhtoan/xu-ly-khieu-nai.html" >TT05 - Đối soát & Xử lý khiếu nại (xu-ly-khieu-nai.html)</option>
+            <option value="../thanhtoan/chi-tra.html" >TT06 - Chọn hình thức thanh toán (chi-tra.html)</option>
+            <option value="../thanhtoan/phieu-luong.html" >TT07 - Xuất phiếu lương chi tiết (phieu-luong.html)</option>
+            <option value="../thanhtoan/phieu-cua-toi.html" >TT08 - Lịch sử phiếu lương của tôi (phieu-cua-toi.html)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="../dang-nhap.html" class="text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <div class="max-w-6xl mx-auto space-y-5">
+      <!-- Header Info Card -->
+      <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">Đăng ký lịch làm việc (DK01)</span>
+            <h2 class="text-lg font-bold text-slate-800 mt-1">Đăng Ký Ca Trực Theo Tuần</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500">Cổng đăng ký:</span>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Đang mở
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 text-xs">
+          <div><span class="text-slate-400 block text-[11px]">Nhân sự</span><strong class="text-slate-800 font-semibold">BS. Nguyễn Văn A</strong><div class="text-slate-400 text-[10px]">Mã NS: BS001</div></div>
+          <div><span class="text-slate-400 block text-[11px]">Khoa trực thuộc</span><strong class="text-slate-800 font-semibold">Răng – Hàm – Mặt</strong></div>
+          <div><span class="text-slate-400 block text-[11px]">Tuần đăng ký</span><strong class="text-sky-700 font-semibold">Tuần 37</strong><div class="text-slate-400 text-[10px]">07/09/2026 – 13/09/2026</div></div>
+          <div><span class="text-slate-400 block text-[11px]">Hạn chót đăng ký</span><strong class="text-rose-600 font-semibold">23:59 Thứ 5, 03/09</strong><div class="text-rose-500 text-[10px]">Còn 1 ngày 06 giờ</div></div>
+          <div><span class="text-slate-400 block text-[11px]">Số ca quy định</span><strong class="text-slate-800 font-semibold">8 – 12 ca / tuần</strong><div class="text-slate-400 text-[10px]">Tối đa 2 ca/ngày</div></div>
+          <div class="bg-sky-50 rounded-lg p-2 border border-sky-100 text-center">
+            <span class="text-sky-800 block text-[11px] font-medium">Số ca đã chọn</span>
+            <span class="text-xl font-bold text-sky-700">10 / 12</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7x3 SHIFT MATRIX GRID -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-table-cells text-sky-600"></i> Ma trận lưới chọn ca trong tuần
+          </h3>
+          <span class="text-[11px] text-slate-500 italic">* Ràng buộc: Tối đa 2 ca/ngày, tối thiểu 8 ca/tuần.</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse text-center">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                <th class="py-2.5 px-3 font-semibold text-left w-40 border-r border-slate-200">Ca làm việc \ Ngày</th>
+                <th class="py-2.5 px-2 font-semibold">T2 (07/09)</th>
+                <th class="py-2.5 px-2 font-semibold">T3 (08/09)</th>
+                <th class="py-2.5 px-2 font-semibold">T4 (09/09)</th>
+                <th class="py-2.5 px-2 font-semibold">T5 (10/09)</th>
+                <th class="py-2.5 px-2 font-semibold">T6 (11/09)</th>
+                <th class="py-2.5 px-2 font-semibold">T7 (12/09)</th>
+                <th class="py-2.5 px-2 font-semibold text-rose-600">CN (13/09)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr>
+                <td class="py-3 px-3 text-left font-medium border-r border-slate-200">
+                  <div class="font-bold text-slate-800">Sáng</div>
+                  <div class="text-[10px] text-slate-400">07:00–11:00</div>
+                  <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-sky-100 text-sky-700">Chính (1.0x)</span>
+                </td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+              </tr>
+              <tr>
+                <td class="py-3 px-3 text-left font-medium border-r border-slate-200">
+                  <div class="font-bold text-slate-800">Chiều</div>
+                  <div class="text-[10px] text-slate-400">13:00–17:00</div>
+                  <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-sky-100 text-sky-700">Chính (1.0x)</span>
+                </td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+              </tr>
+              <tr>
+                <td class="py-3 px-3 text-left font-medium border-r border-slate-200">
+                  <div class="font-bold text-slate-800">Tối</div>
+                  <div class="text-[10px] text-slate-400">18:00–22:00</div>
+                  <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-700">Ngoài giờ (2.0x)</span>
+                </td>
+                <td class="py-2 px-1"><button disabled class="w-12 h-10 rounded-lg border bg-slate-100 text-slate-300 opacity-60 mx-auto flex items-center justify-center cursor-not-allowed">Đủ 2 ca</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-sky-600 text-white font-bold mx-auto flex items-center justify-center shadow"><i class="fa-solid fa-check"></i></button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+                <td class="py-2 px-1"><button class="w-12 h-10 rounded-lg border bg-white text-slate-400 mx-auto flex items-center justify-center">☐</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
+        <a href="../trangchu/nhan-su.html" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Quay về trang chủ</a>
+        <a href="fragments/xac-nhan.html" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-floppy-disk"></i> Tiếp tục xác nhận lưu đăng ký (DK02) &rarr;
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="no-print bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+    Phân tích & Thiết kế HTTT • Học viện Công nghệ Bưu chính Viễn thông (PTIT) • Nhóm 10 - E23HTTT03
+  </footer>
+  
+  
+  
+  
+  <script src="../../../../../../js/api.js"></script>
+  <script src="../../../../../../js/state.js"></script>
+  <script src="../../../../../../js/app.js"></script>
+  <script src="../../../../../../js/module1-dangky.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Gradle / kết quả build
+.gradle/
+build/
+bin/
+out/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+
+# Log, file tạm của hệ điều hành / Office
+*.log
+Thumbs.db
+.DS_Store
+~$*
+
+# Node (script kiểm thử, nếu có)
+node_modules/

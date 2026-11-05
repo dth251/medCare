@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <script>/* MedCare Seamless SPA Bridge */ window.location.replace('./index.html#screen-C01');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập hệ thống (C01) - Phòng Khám MedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+
+  <!-- TOP BAR: DEMO NAVIGATOR -->
+  <header class="no-print bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-3">
+        <a href="chon-module.html" class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-base text-white shadow">
+          <i class="fa-solid fa-hospital"></i>
+        </a>
+        <div>
+          <div class="font-semibold text-sm tracking-wide flex items-center gap-2">
+            Phòng Khám Tư MedCare
+            <span class="bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded text-[10px] font-mono">MedCare</span>
+          </div>
+          <div class="text-slate-400 text-[11px]">Hệ Thống Quản Lý Ca Trực & Quyết Toán Y Tế</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-slate-400 font-medium hidden sm:inline"><i class="fa-solid fa-desktop mr-1"></i>Trang:</span>
+        <select onchange="window.location.href=this.value" class="bg-slate-800 border border-slate-600 text-sky-300 rounded px-2.5 py-1 text-xs focus:ring-1 focus:ring-sky-400 focus:outline-none">
+          <option value="dang-nhap.html" selected>Đăng nhập hệ thống (C01)</option>
+          <option value="chon-module.html">Chọn phân hệ (C05)</option>
+          <option value="trangchu/nhan-su.html">Trang chủ Bác sĩ/Y tá (C02)</option>
+          <option value="trangchu/quan-ly.html">Trang chủ Quản lý (C03)</option>
+          <option value="trangchu/ke-toan.html">Trang chủ Kế toán (C04)</option>
+          <option value="dangky/lich-tuan.html">Đăng ký ca trực tuần (DK01)</option>
+          <option value="phancong/danh-sach-khoa.html">Danh sách khoa phân công (PC01)</option>
+          <option value="phancong/lich-khoa.html">Lịch trực khoa chi tiết (PC02)</option>
+          <option value="thanhtoan/danh-sach-khoa.html">Danh sách khoa thanh toán (TT01)</option>
+          <option value="thanhtoan/nhan-su-khoa.html">Nhân sự khoa & Thù lao (TT02)</option>
+          <option value="thanhtoan/cham-cong.html">Chi tiết chấm công (TT03)</option>
+          <option value="thanhtoan/xu-ly-khieu-nai.html">Xử lý khiếu nại (TT05)</option>
+          <option value="thanhtoan/chi-tra.html">Chọn hình thức chi trả (TT06)</option>
+          <option value="thanhtoan/phieu-luong.html">Phiếu thanh toán thù lao (TT07)</option>
+          <option value="thanhtoan/phieu-cua-toi.html">Phiếu thù lao của tôi (TT08)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="dang-nhap.html" class="text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <div class="max-w-md mx-auto mt-6 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-sky-600 to-indigo-700 p-8 text-white text-center">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-sm flex items-center justify-center mx-auto mb-3 shadow-inner">
+          <i class="fa-solid fa-hospital-user text-3xl text-white"></i>
+        </div>
+        <h2 class="text-2xl font-bold">HỆ THỐNG PHÒNG KHÁM TƯ</h2>
+        <p class="text-sky-100 text-xs mt-1">Cổng đăng nhập quản lý ca trực & quyết toán thù lao M2</p>
+      </div>
+
+      <form onsubmit="handleLogin(event);" class="p-8 space-y-5">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Tên đăng nhập / Mã nhân sự</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fa-regular fa-user"></i></span>
+            <input type="text" id="loginUsername" required value="bs.nguyenvana" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Mật khẩu</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" id="loginPassword" required value="123456" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập hệ thống
+          </button>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4 mt-4 text-center">
+          <span class="text-xs text-slate-500">Đăng nhập nhanh theo vai trò:</span>
+          <div class="flex justify-center gap-2 mt-2">
+            <button type="button" onclick="quickFillLogin('bs.nguyenvana', 'nhansu');" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-sky-100 text-sky-800 rounded font-medium border">BS. Nguyễn A</button>
+            <button type="button" onclick="quickFillLogin('ql.levanc', 'quanly');" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-indigo-100 text-indigo-800 rounded font-medium border">QL. Lê Văn C</button>
+            <button type="button" onclick="quickFillLogin('kt.tranthib', 'ketoan');" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-emerald-100 text-emerald-800 rounded font-medium border">KT. Trần Thị B</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </main>
+
+  <footer class="no-print bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+    Phân tích & Thiết kế HTTT • Học viện Công nghệ Bưu chính Viễn thông (PTIT) • Nhóm 10 - E23HTTT03
+  </footer>
+  <script src="js/api.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
