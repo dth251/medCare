@@ -1,21 +1,20 @@
 package com.medcare.clinic.entity;
 
 import com.medcare.clinic.enums.TrangThaiBangPhanCong;
-import jakarta.persistence.*;
+import com.medcare.clinic.enums.VaiTroPhanCong;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Bảng phân công của một khoa trong một tuần.
- * Chi tiết từng vị trí (BS chính / Y tá 1 / Y tá 2) nằm ở PhanCongCa.
+ * Bảng phân công ca trực của khoa trong tuần.
+ * Đã gộp toàn bộ thông tin phân công ca (nhân sự, ca trực, vai trò, điều động, ghi chú)
+ * trực tiếp vào entity này theo thiết kế cập nhật.
  */
 @Entity
-@Table(name = "tblBangPhanCong", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"khoaId", "tuanLamViecId"})
-})
+@Table(name = "tblBangPhanCong")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -49,10 +48,26 @@ public class BangPhanCong {
     private TuanLamViec tuanLamViec;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nguoiLapId", nullable = false)
+    @JoinColumn(name = "nguoiLapId")
     private NhanVien nguoiLap;
 
-    @OneToMany(mappedBy = "bangPhanCong", cascade = CascadeType.ALL, orphanRemoval = true)
+    // Chi tiết phân công ca được gộp trực tiếp vào BangPhanCong
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "caTrucKhoaId")
+    private CaTrucKhoa caTrucKhoa;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nhanSuId")
+    private NhanSuYTe nhanSuYTe;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private VaiTroPhanCong vaiTro;
+
+    @Column(columnDefinition = "TEXT")
+    private String ghiChu;
+
     @Builder.Default
-    private List<PhanCongCa> chiTietPhanCong = new ArrayList<>();
+    @Column(nullable = false)
+    private boolean dieuDongNgoaiDangKy = false;
 }

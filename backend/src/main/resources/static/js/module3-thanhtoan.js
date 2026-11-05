@@ -4,19 +4,21 @@
  * Nhân sự: TT03 (chấm công của tôi, gửi khiếu nại TT04), TT08 → TT07
  */
 
+const KN_TONE = { CHO_XU_LY: 'warning', DA_XU_LY: 'success', TU_CHOI: 'danger' };
+
 // ==========================================
 // TRANG CHỦ KẾ TOÁN (C04)
 // ==========================================
 SCREEN_LOADERS['screen-C04'] = async () => {
   const u = STATE.user;
-  setText('c04Name', displayName(u));
-  setText('c04Ma', `Mã NV: ${u.maNhanSu}`);
+  setText('c04Name', u.fullName);
+  setText('c04Ma', [u.chucDanh, u.maNhanSu].filter(Boolean).join(' · '));
   const pay = STATE.payment;
   pay.week = pay.week || pickPaymentWeek();
   const w = pay.week;
   if (!w) return;
-  setText('c04WeekBtnText', `Quyết toán thù lao ${w.ten}`);
-  setText('c04ProgressLabel', `Tiến độ thanh toán ${w.ten}`);
+  setText('c04WeekBtnText', `Quyết toán ${w.ten}`);
+  setText('c04ProgressLabel', `Khoa đã chi trả · ${w.ten}`);
 
   const [depts, pending] = await Promise.all([
     MedcareAPI.getPaymentDepartments(w.id),
@@ -24,19 +26,19 @@ SCREEN_LOADERS['screen-C04'] = async () => {
   ]);
   const active = depts.filter(d => d.soNhanSu > 0);
   const done = active.filter(d => d.soDaThanhToan >= d.soNhanSu).length;
-  setText('c04Progress', `${done} / ${active.length} Khoa`);
+  setText('c04Progress', `${done} / ${active.length}`);
   const bar = document.getElementById('c04ProgressBar');
   if (bar) bar.style.width = active.length ? `${(done / active.length) * 100}%` : '0%';
   setText('c04Budget', fmtMoney(depts.reduce((s, d) => s + Number(d.tongTien || 0), 0)));
-  setText('c04Complaints', `${pending.length} Đơn chờ`);
-  setText('c04ComplaintsNote', pending[0] ? `Mới nhất: ${pending[0].hoTen} (${pending[0].maNhanSu})` : 'Không có khiếu nại mới');
+  setText('c04Complaints', `${pending.length}`);
+  setText('c04ComplaintsNote', pending[0] ? `Mới nhất: ${pending[0].hoTen}` : '');
 
   const banner = document.getElementById('c04ComplaintBanner');
   if (banner) banner.classList.toggle('hidden', pending.length === 0);
   if (pending[0]) {
     const k = pending[0];
-    setText('c04ComplaintTitle', `Có ${pending.length} đơn khiếu nại chưa xử lý – mới nhất từ ${k.hoTen} (${k.maNhanSu})`);
-    setText('c04ComplaintText', `Nội dung: "${k.noiDung || ''}"${k.tenCa ? ` • Ca ${k.tenCa} ${fmtDate(k.ngay)}` : ''}`);
+    setText('c04ComplaintTitle', `${pending.length} khiếu nại đang chờ xử lý`);
+    setText('c04ComplaintText', `${k.hoTen}${k.tenCa ? ` · Ca ${k.tenCa} ${fmtDate(k.ngay)}` : ''} · ${k.noiDung || ''}`);
   }
 };
 
@@ -50,32 +52,31 @@ async function loadPaymentDepts() {
   pay.week = pay.week || pickPaymentWeek();
   setHtml('ttWeekSelect', weekOptionsHtml(pay.week?.id));
   if (!pay.week) {
-    setTableMessage('ttDeptTableBody', 6, 'Chưa có tuần làm việc nào.');
+    setTableMessage('ttDeptTableBody', 5, 'Chưa có tuần làm việc nào.');
     return;
   }
-  setTableMessage('ttDeptTableBody', 6, 'Đang tính thù lao theo khoa...');
+  setTableMessage('ttDeptTableBody', 5, 'Đang tải…');
   pay.depts = await MedcareAPI.getPaymentDepartments(pay.week.id);
 
   const active = pay.depts.filter(d => d.soNhanSu > 0);
   const done = active.filter(d => d.soDaThanhToan >= d.soNhanSu).length;
-  setText('ttOverallProgress', `${done} / ${active.length} đã hoàn tất`);
+  setText('ttOverallProgress', `${pay.week.ten} · ${done}/${active.length} khoa đã chi trả`);
 
   setHtml('ttDeptTableBody', pay.depts.map(d => {
     const complete = d.soNhanSu > 0 && d.soDaThanhToan >= d.soNhanSu;
-    const status = d.soNhanSu === 0 ? ['Không có nhân sự', 'bg-slate-100 text-slate-500']
-      : complete ? ['Đã hoàn tất', 'bg-emerald-100 text-emerald-800']
-      : [`Chờ quyết toán (${d.soDaThanhToan}/${d.soNhanSu})`, 'bg-amber-100 text-amber-800'];
-    return `<tr class="hover:bg-slate-50/80 transition">
-      <td class="py-3.5 px-4 font-mono font-bold text-sky-700">${escapeHtml(d.maKhoa)}</td>
-      <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(d.tenKhoa)}</td>
-      <td class="py-3.5 px-4 text-center font-semibold">${d.soNhanSu} nhân sự</td>
-      <td class="py-3.5 px-4 text-right font-bold text-slate-800">${fmtMoney(d.tongTien)}</td>
-      <td class="py-3.5 px-4"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${status[1]}">${status[0]}</span></td>
-      <td class="py-3.5 px-4 text-center">
-        ${d.soNhanSu > 0 ? `<button onclick="ttSelectDept(${d.khoaId})" class="px-3 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded text-xs font-semibold">Chi tiết &rarr;</button>` : ''}
+    const status = d.soNhanSu === 0 ? badge('Không có nhân sự', 'neutral')
+      : complete ? badge('Hoàn tất', 'success')
+      : badge(`Đã chi ${d.soDaThanhToan}/${d.soNhanSu}`, 'warning');
+    return `<tr>
+      <td><div class="cell-strong">${escapeHtml(d.tenKhoa)}</div><div class="cell-sub">${escapeHtml(d.maKhoa)}</div></td>
+      <td class="text-center num">${d.soNhanSu}</td>
+      <td class="text-right num cell-strong">${fmtMoney(d.tongTien)}</td>
+      <td>${status}</td>
+      <td class="text-right">
+        ${d.soNhanSu > 0 ? `<button onclick="ttSelectDept(${d.khoaId})" class="btn btn-secondary btn-sm">Chi tiết</button>` : ''}
       </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Chưa có khoa nào.</td></tr>');
+  }).join('') || '<tr><td colspan="5" class="empty">Chưa có khoa nào.</td></tr>');
 }
 
 function ttChangeWeek(weekId) {
@@ -83,9 +84,30 @@ function ttChangeWeek(weekId) {
   loadPaymentDepts().catch(handleError);
 }
 
+function ttQuickSwitchWeek(mode) {
+  let target = null;
+  if (mode === 'current') {
+    target = getCurrentWeek();
+  } else {
+    const cur = getCurrentWeek();
+    const sorted = [...STATE.weeks].sort((a, b) => String(b.ngayBatDau).localeCompare(String(a.ngayBatDau)));
+    target = cur ? sorted.find(w => String(w.ngayKetThuc) < String(cur.ngayBatDau)) : sorted[1] || sorted[0];
+  }
+  if (!target) {
+    showToast('Không tìm thấy tuần phù hợp', false);
+    return;
+  }
+  STATE.payment.week = target;
+  loadPaymentDepts().catch(handleError);
+}
+
 function ttSelectDept(khoaId) {
-  STATE.payment.deptId = khoaId;
-  navigateTo('screen-TT02');
+  STATE.payment.deptId = Number(khoaId);
+  if (STATE.currentScreen === 'screen-TT02') {
+    SCREEN_LOADERS['screen-TT02']().catch(handleError);
+  } else {
+    navigateTo('screen-TT02');
+  }
 }
 
 // ==========================================
@@ -97,57 +119,113 @@ SCREEN_LOADERS['screen-TT02'] = async () => {
     navigateTo('screen-TT01');
     return;
   }
+  if (!pay.depts || !pay.depts.length) {
+    pay.depts = await MedcareAPI.getPaymentDepartments(pay.week.id).catch(() => []);
+  }
   const dept = pay.depts.find(d => d.khoaId === pay.deptId);
-  setText('ttDeptTitle', dept ? `${dept.tenKhoa} (${dept.maKhoa})` : '');
-  setText('ttDeptWeek', pay.week.ten);
-  setTableMessage('ttStaffTableBody', 12, 'Đang tính thù lao nhân sự...');
+  setText('ttDeptTitle', dept ? dept.tenKhoa : '—');
+  setText('ttDeptWeek', `Bảng lương · ${pay.week.ten}`);
+  pay.staffFilter = pay.staffFilter || 'ALL';
+  const searchInput = document.getElementById('ttStaffSearchInput');
+  if (searchInput) searchInput.value = '';
+  ttSetPayrollFilter(pay.staffFilter, true);
+  renderTtDeptQuickTabs();
+  setTableMessage('ttStaffTableBody', 7, 'Đang tải…');
   pay.staff = await MedcareAPI.getPaymentStaff(pay.week.id, pay.deptId);
   renderStaffPaymentList();
 };
 
+function ttFilterStaffPayroll() {
+  renderStaffPaymentList();
+}
+
+function ttSetPayrollFilter(mode, skipRender) {
+  STATE.payment.staffFilter = mode || 'ALL';
+  setSegmented(['ttFilterAll', 'ttFilterUnpaid', 'ttFilterPaid', 'ttFilterComplaint'],
+    { ALL: 'ttFilterAll', UNPAID: 'ttFilterUnpaid', PAID: 'ttFilterPaid', COMPLAINT: 'ttFilterComplaint' }[STATE.payment.staffFilter]);
+  if (!skipRender) renderStaffPaymentList();
+}
+
+/** Chuyển sang bảng lương của khoa tiếp theo. */
+function ttNextDepartment() {
+  const pay = STATE.payment;
+  const list = (pay.depts || []).filter(d => d.soNhanSu > 0);
+  if (!list.length) return;
+  const idx = list.findIndex(d => d.khoaId === pay.deptId);
+  const next = list[(idx + 1) % list.length];
+  if (next) ttSelectDept(next.khoaId);
+}
+
+/** Ô chọn khoa để chuyển nhanh giữa các bảng lương. */
+function renderTtDeptQuickTabs() {
+  const pay = STATE.payment;
+  const el = document.getElementById('ttDeptQuickTabs');
+  if (!el) return;
+  const list = (pay.depts || []).filter(d => d.soNhanSu > 0);
+  el.innerHTML = list.length
+    ? `<select class="select select-sm" onchange="ttSelectDept(this.value)">${list.map(d =>
+        `<option value="${d.khoaId}" ${d.khoaId === pay.deptId ? 'selected' : ''}>${escapeHtml(d.tenKhoa)}</option>`).join('')}</select>`
+    : '';
+}
+
 function renderStaffPaymentList() {
   const pay = STATE.payment;
-  setHtml('ttStaffTableBody', pay.staff.map(ns => {
+  const q = (document.getElementById('ttStaffSearchInput')?.value || '').toLowerCase().trim();
+  const mode = pay.staffFilter || 'ALL';
+  const filtered = (pay.staff || []).filter(ns => {
+    const l = ns.luong || {};
+    const paid = ns.trangThai === 'DA_THANH_TOAN';
+    if (mode === 'UNPAID' && paid) return false;
+    if (mode === 'PAID' && !paid) return false;
+    if (mode === 'COMPLAINT' && !(l.soKhieuNaiChoXuLy > 0)) return false;
+    if (q) {
+      return (ns.hoTen || '').toLowerCase().includes(q)
+        || (ns.maNhanSu || '').toLowerCase().includes(q)
+        || (ns.chucDanh || '').toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  setHtml('ttStaffTableBody', filtered.map(ns => {
     const l = ns.luong;
     const paid = ns.trangThai === 'DA_THANH_TOAN';
     const hasShift = l.soCaChinh + l.soCaNgoaiGio > 0 || Number(l.tienDieuChinh) !== 0;
+    let status;
     let action;
     if (paid) {
-      action = `<button onclick="ttOpenSlip(${ns.phieuId}, 'screen-TT02')" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded text-xs font-semibold">Phiếu lương</button>`;
+      status = badge('Đã chi', 'success');
+      action = `<button onclick="ttOpenSlip(${ns.phieuId}, 'screen-TT02')" class="btn btn-secondary btn-sm">Phiếu lương</button>`;
     } else if (l.soKhieuNaiChoXuLy > 0) {
-      action = `<button onclick="navigateTo('screen-TT05')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-semibold">Xử lý KN</button>`;
+      status = badge(`${l.soKhieuNaiChoXuLy} khiếu nại`, 'warning');
+      action = `<button onclick="navigateTo('screen-TT05')" class="btn btn-secondary btn-sm">Xử lý</button>`;
     } else if (hasShift) {
-      action = `<button onclick="ttOpenPaymentScreen(${ns.nhanSuId})" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold shadow-sm">Chi trả</button>`;
+      status = badge('Chưa chi', 'neutral');
+      action = `<button onclick="ttOpenPaymentScreen(${ns.nhanSuId})" class="btn btn-primary btn-sm">Chi trả</button>`;
     } else {
-      action = '<span class="text-[11px] text-slate-400">Không có ca</span>';
+      status = badge('Không có ca', 'neutral');
+      action = '';
     }
-    return `<tr class="hover:bg-slate-50/80 transition whitespace-nowrap">
-      <td class="py-3 px-3 font-mono font-bold text-sky-700">${escapeHtml(ns.maNhanSu)}</td>
-      <td class="py-3 px-3 font-semibold text-slate-800">${escapeHtml(ns.hoTen)}</td>
-      <td class="py-3 px-3">${escapeHtml(ns.chucDanh)}</td>
-      <td class="py-3 px-3 text-slate-500">${escapeHtml(ns.hocVi || '—')}</td>
-      <td class="py-3 px-3 text-center font-semibold">${l.soCaChinh}</td>
-      <td class="py-3 px-3 text-center font-semibold">${l.soCaNgoaiGio}${l.soCaKhongTinh ? ` <span class="text-rose-500 text-[10px]" title="Ca không được tính công (vắng / thiếu dữ liệu quẹt thẻ)">(-${l.soCaKhongTinh})</span>` : ''}</td>
-      <td class="py-3 px-3 text-right font-mono text-slate-600">${fmtMoney(l.donGiaCa)}</td>
-      <td class="py-3 px-3 text-center">1.0</td>
-      <td class="py-3 px-3 text-center">${Number(l.heSoNgoaiGio).toFixed(1)}</td>
-      <td class="py-3 px-3 text-right font-bold text-slate-900">${fmtMoney(l.tongThucLinh)}
-        ${Number(l.tienDieuChinh) !== 0 ? `<div class="text-[10px] font-medium text-emerald-700">gồm điều chỉnh ${fmtMoney(l.tienDieuChinh)}</div>` : ''}
+    return `<tr>
+      <td>
+        <div class="cell-strong">${escapeHtml(ns.hoTen)}</div>
+        <div class="cell-sub">${escapeHtml(ns.maNhanSu)} · ${escapeHtml(ns.chucDanh)}${ns.hocVi ? ' · ' + escapeHtml(ns.hocVi) : ''}</div>
       </td>
-      <td class="py-3 px-3 text-center">
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${paid ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}">${paid ? 'Đã TT' : 'Chưa TT'}</span>
-        ${l.soKhieuNaiChoXuLy ? `<span class="ml-1 text-[10px] font-bold px-1.5 rounded bg-rose-100 text-rose-700">${l.soKhieuNaiChoXuLy} KN chờ</span>` : ''}
+      <td class="text-center num">${l.soCaChinh}</td>
+      <td class="text-center num">${l.soCaNgoaiGio}${l.soCaKhongTinh ? ` <span class="cell-sub" title="Ca không được tính công">(−${l.soCaKhongTinh})</span>` : ''}</td>
+      <td class="text-right num">${fmtMoney(l.donGiaCa)}</td>
+      <td class="text-right num">
+        <div class="cell-strong">${fmtMoney(l.tongThucLinh)}</div>
+        ${Number(l.tienDieuChinh) !== 0 ? `<div class="cell-sub">gồm điều chỉnh ${fmtMoney(l.tienDieuChinh)}</div>` : ''}
       </td>
-      <td class="py-3 px-3 text-center">
-        <div class="flex items-center justify-center gap-1.5">
-          <button onclick="ttViewTimesheet(${ns.nhanSuId})" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold" title="Xem bảng chấm công chi tiết">
-            <i class="fa-solid fa-clipboard-user mr-1 text-indigo-600"></i>Chấm công
-          </button>
-          ${action}
+      <td>${status}</td>
+      <td class="text-right">
+        <div class="row-actions">
+          <button onclick="ttViewTimesheet(${ns.nhanSuId})" class="btn btn-ghost btn-sm">Chấm công</button>
+          ${action || '<span></span>'}
         </div>
       </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="12" class="py-6 text-center text-slate-400 italic">Khoa chưa có nhân sự.</td></tr>');
+  }).join('') || '<tr><td colspan="7" class="empty">Không có nhân sự phù hợp.</td></tr>');
 }
 
 // ==========================================
@@ -157,7 +235,7 @@ function ttViewTimesheet(nhanSuId) {
   const pay = STATE.payment;
   const ns = pay.staff.find(s => s.nhanSuId === nhanSuId);
   const dept = pay.depts.find(d => d.khoaId === pay.deptId);
-  pay.timesheetOwner = { nhanSuId, hoTen: `${ns.chucDanh === 'Bác sĩ' ? 'BS. ' : 'YT. '}${ns.hoTen}`, maNhanSu: ns.maNhanSu, tenKhoa: dept?.tenKhoa };
+  pay.timesheetOwner = { nhanSuId, hoTen: ns.hoTen, maNhanSu: ns.maNhanSu, tenKhoa: dept?.tenKhoa };
   pay.timesheetWeek = pay.week;
   navigateTo('screen-TT03');
 }
@@ -165,23 +243,27 @@ function ttViewTimesheet(nhanSuId) {
 /** Nhân sự xem bảng chấm công của chính mình. */
 function ttOpenMyTimesheet() {
   const u = STATE.user;
-  STATE.payment.timesheetOwner = { nhanSuId: u.id, hoTen: displayName(u), maNhanSu: u.maNhanSu, tenKhoa: u.tenKhoa };
+  STATE.payment.timesheetOwner = { nhanSuId: u.id, hoTen: u.fullName, maNhanSu: u.maNhanSu, tenKhoa: u.tenKhoa };
   STATE.payment.timesheetWeek = pickPaymentWeek();
   navigateTo('screen-TT03');
 }
 
 SCREEN_LOADERS['screen-TT03'] = async () => {
   const pay = STATE.payment;
-  if (STATE.user.vaiTro === 'NHAN_SU' && (!pay.timesheetOwner || pay.timesheetOwner.nhanSuId !== STATE.user.id)) {
+  const isStaff = STATE.user.vaiTro === 'NHAN_SU';
+  if (isStaff && (!pay.timesheetOwner || pay.timesheetOwner.nhanSuId !== STATE.user.id)) {
     const u = STATE.user;
-    pay.timesheetOwner = { nhanSuId: u.id, hoTen: displayName(u), maNhanSu: u.maNhanSu, tenKhoa: u.tenKhoa };
+    pay.timesheetOwner = { nhanSuId: u.id, hoTen: u.fullName, maNhanSu: u.maNhanSu, tenKhoa: u.tenKhoa };
   }
   if (!pay.timesheetOwner) {
     navigateTo('screen-TT01');
     return;
   }
+  const back = document.getElementById('ttTsBack');
+  if (back) back.classList.toggle('hidden', isStaff);
   pay.timesheetWeek = pay.timesheetWeek || pickPaymentWeek();
   setHtml('ttTimesheetWeek', weekOptionsHtml(pay.timesheetWeek?.id));
+  setSegmented(['ttTsFilterAll', 'ttTsFilterIssue'], pay.timesheetFilter === 'ISSUE' ? 'ttTsFilterIssue' : 'ttTsFilterAll');
   await loadTimesheet();
 };
 
@@ -194,61 +276,78 @@ async function loadTimesheet() {
   const pay = STATE.payment;
   const o = pay.timesheetOwner;
   const w = pay.timesheetWeek;
-  setText('ttTimesheetStaffHeader', `${o.hoTen} – Mã NS: ${o.maNhanSu}`);
-  setText('ttTimesheetSub', `${o.tenKhoa || ''} • ${weekLabel(w)}`);
+  const isStaff = STATE.user.vaiTro === 'NHAN_SU';
+  setText('ttTimesheetStaffHeader', isStaff ? 'Chấm công' : o.hoTen);
+  setText('ttTimesheetSub', [isStaff ? null : o.maNhanSu, o.tenKhoa, w ? `${w.ten} · ${fmtDateShort(w.ngayBatDau)} – ${fmtDateShort(w.ngayKetThuc)}` : null].filter(Boolean).join(' · '));
   if (!w) {
-    setTableMessage('ttTimesheetRecordsBody', 8, 'Chưa có tuần làm việc nào.');
+    setTableMessage('ttTimesheetRecordsBody', 7, 'Chưa có tuần làm việc nào.');
     return;
   }
-  setTableMessage('ttTimesheetRecordsBody', 8, 'Đang tải bảng chấm công...');
+  setTableMessage('ttTimesheetRecordsBody', 7, 'Đang tải…');
   pay.timesheet = await MedcareAPI.getTimesheet(o.nhanSuId, w.id);
   renderTimesheetRecords();
 }
 
 function chamCongBadge(rec) {
   const label = TRANG_THAI_CHAM_CONG[rec.trangThai] || rec.trangThai;
-  const cls = rec.thieuQuetThe ? 'bg-rose-100 text-rose-800'
-    : rec.trangThai === 'DUNG_GIO' ? 'bg-emerald-100 text-emerald-800'
-    : rec.trangThai === 'CHUA_CO_DU_LIEU' ? 'bg-slate-100 text-slate-600'
-    : 'bg-amber-100 text-amber-800';
-  return `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${cls}">${escapeHtml(label)}</span>`;
+  const tone = rec.thieuQuetThe ? 'danger'
+    : rec.trangThai === 'DUNG_GIO' ? 'success'
+    : rec.trangThai === 'CHUA_CO_DU_LIEU' ? 'neutral'
+    : 'warning';
+  return badge(label, tone);
 }
 
 function timesheetAction(rec) {
   const isStaff = STATE.user.vaiTro === 'NHAN_SU';
   const kn = rec.trangThaiKhieuNai;
-  const knBadge = kn ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${kn === 'DA_XU_LY' ? 'bg-emerald-100 text-emerald-800' : kn === 'TU_CHOI' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'}" title="${escapeHtml(rec.maDonKhieuNai || '')}">KN: ${escapeHtml(TRANG_THAI_KHIEU_NAI[kn] || kn)}</span>` : '';
+  const knBadge = kn ? badge(`Khiếu nại: ${(TRANG_THAI_KHIEU_NAI[kn] || kn).toLowerCase()}`, KN_TONE[kn] || 'neutral') : '';
 
   if (isStaff) {
     if (kn === 'CHO_XU_LY') return knBadge;
-    return `<div class="flex items-center justify-center gap-1">${knBadge}
-      <button onclick="ttOpenComplaintForm(${rec.phanCongCaId})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-semibold">
-        <i class="fa-solid fa-paper-plane mr-1"></i>Khiếu nại
-      </button></div>`;
+    const issue = rec.thieuQuetThe || !rec.duocTinhCong || (rec.trangThai !== 'DUNG_GIO' && rec.trangThai !== 'CHUA_CO_DU_LIEU');
+    return `<div class="flex items-center justify-end gap-2">${knBadge}
+      <button onclick="ttOpenComplaintForm(${rec.phanCongCaId})" class="btn ${issue ? 'btn-secondary' : 'btn-ghost row-action'} btn-sm">Khiếu nại</button></div>`;
   }
   if (kn === 'CHO_XU_LY') {
-    return `<button onclick="ttOpenComplaint(${rec.khieuNaiId})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[11px] font-bold shadow-sm mx-auto flex items-center gap-1">
-      <i class="fa-solid fa-code-compare"></i> Đối soát</button>`;
+    return `<button onclick="ttOpenComplaint(${rec.khieuNaiId})" class="btn btn-secondary btn-sm">Đối soát</button>`;
   }
   if (kn) return knBadge;
-  return rec.duocTinhCong
-    ? '<span class="text-emerald-600 font-semibold text-[11px]"><i class="fa-solid fa-circle-check"></i> Tính công</span>'
-    : '<span class="text-rose-600 font-semibold text-[11px]"><i class="fa-solid fa-ban"></i> Không tính công</span>';
+  return rec.duocTinhCong ? '' : '<span class="cell-sub">Không tính công</span>';
+}
+
+function ttSetTimesheetFilter(mode) {
+  STATE.payment.timesheetFilter = mode || 'ALL';
+  setSegmented(['ttTsFilterAll', 'ttTsFilterIssue'], STATE.payment.timesheetFilter === 'ISSUE' ? 'ttTsFilterIssue' : 'ttTsFilterAll');
+  renderTimesheetRecords();
 }
 
 function renderTimesheetRecords() {
   const pay = STATE.payment;
-  setHtml('ttTimesheetRecordsBody', pay.timesheet.map(rec => `
-    <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-      <td class="py-2.5 px-3 font-semibold text-slate-800">${escapeHtml(THU_LABEL[rec.thu] || '')} (${fmtDateShort(rec.ngay)})</td>
-      <td class="py-2.5 px-3 font-medium text-slate-700">${escapeHtml(rec.tenCa)} <span class="text-slate-400 text-[10px]">(${escapeHtml(rec.thoiGian)})</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${rec.loaiCa === 'NGOAI_GIO' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}">${rec.loaiCa === 'NGOAI_GIO' ? 'Ngoài giờ' : 'Chính'}</span></td>
-      <td class="py-2.5 px-3 text-center font-bold text-slate-700">${Number(rec.heSo || 1).toFixed(1)}</td>
-      <td class="py-2.5 px-3 text-center font-mono ${rec.thieuQuetThe ? 'text-rose-600 font-bold' : ''}">${escapeHtml(rec.gioCheckIn)}</td>
-      <td class="py-2.5 px-3 text-center font-mono ${rec.thieuQuetThe ? 'text-rose-600 font-bold' : ''}">${escapeHtml(rec.gioCheckOut)}</td>
-      <td class="py-2.5 px-3">${chamCongBadge(rec)}${rec.ghiChu ? `<div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(rec.ghiChu)}</div>` : ''}</td>
-      <td class="py-2.5 px-3 text-center">${timesheetAction(rec)}</td>
-    </tr>`).join('') || '<tr><td colspan="8" class="py-6 text-center text-slate-400 italic">Không có ca nào được phân công trong tuần này.</td></tr>');
+  const all = pay.timesheet || [];
+  const validCount = all.filter(r => r.duocTinhCong).length;
+  const issueCount = all.filter(r => !r.duocTinhCong || r.thieuQuetThe || (r.trangThai !== 'DUNG_GIO' && r.trangThai !== 'CHUA_CO_DU_LIEU')).length;
+  const knCount = all.filter(r => r.trangThaiKhieuNai).length;
+
+  const stat = (label, value) => `<div class="card stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`;
+  setHtml('ttTimesheetSummaryStrip',
+    stat('Ca phân công', all.length) + stat('Ca tính công', validCount) + stat('Ca có vấn đề', issueCount) + stat('Khiếu nại', knCount));
+
+  const filterMode = pay.timesheetFilter || 'ALL';
+  const rows = filterMode === 'ISSUE'
+    ? all.filter(r => !r.duocTinhCong || r.thieuQuetThe || (r.trangThai !== 'DUNG_GIO' && r.trangThai !== 'CHUA_CO_DU_LIEU') || r.trangThaiKhieuNai)
+    : all;
+
+  const isIssue = rec => rec.thieuQuetThe || !rec.duocTinhCong || (rec.trangThai !== 'DUNG_GIO' && rec.trangThai !== 'CHUA_CO_DU_LIEU');
+  setHtml('ttTimesheetRecordsBody', rows.map(rec => `
+    <tr>
+      <td class="cell-strong">${escapeHtml(THU_LABEL[rec.thu] || '')} <span class="cell-sub num">${fmtDateShort(rec.ngay)}</span></td>
+      <td>${escapeHtml(rec.tenCa)} <span class="cell-sub num">${escapeHtml(rec.thoiGian)}</span>${rec.loaiCa === 'NGOAI_GIO' ? ' <span class="cell-sub">· ngoài giờ</span>' : ''}</td>
+      <td class="text-center num">${Number(rec.heSo || 1).toFixed(1)}</td>
+      <td class="text-center num">${escapeHtml(rec.gioCheckIn)}</td>
+      <td class="text-center num">${escapeHtml(rec.gioCheckOut)}</td>
+      <td>${chamCongBadge(rec)}${rec.ghiChu && isIssue(rec) ? `<div class="cell-sub mt-1">${escapeHtml(rec.ghiChu)}</div>` : ''}</td>
+      <td class="text-right">${timesheetAction(rec)}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">Không có ca trực nào.</td></tr>');
 }
 
 // ==========================================
@@ -258,11 +357,9 @@ function ttOpenComplaintForm(phanCongCaId) {
   const rec = STATE.payment.timesheet.find(r => r.phanCongCaId === phanCongCaId);
   STATE.payment.complaintRow = rec;
   const shift = document.getElementById('ttComplaintShift');
-  if (shift) shift.value = `${THU_LABEL[rec.thu] || ''} (${fmtDate(rec.ngay)}) – Ca ${rec.tenCa} (${rec.thoiGian}) – ${TRANG_THAI_CHAM_CONG[rec.trangThai] || rec.trangThai}`;
-  const content = document.getElementById('ttComplaintContent');
-  if (content) content.value = '';
-  const proof = document.getElementById('ttComplaintProof');
-  if (proof) proof.value = '';
+  if (shift) shift.value = `${THU_LABEL[rec.thu] || ''} ${fmtDate(rec.ngay)} · Ca ${rec.tenCa} (${rec.thoiGian})`;
+  setInput('ttComplaintContent', '');
+  setInput('ttComplaintProof', '');
   openModal('modal-TT04');
 }
 
@@ -303,7 +400,7 @@ async function loadComplaintQueue() {
   const pay = STATE.payment;
   const filter = document.getElementById('ttComplaintFilter');
   if (filter) filter.value = pay.complaintFilter;
-  setTableMessage('ttComplaintListBody', 6, 'Đang tải danh sách khiếu nại...');
+  setTableMessage('ttComplaintListBody', 5, 'Đang tải…');
   pay.complaints = await MedcareAPI.getComplaints(pay.complaintFilter || null);
 
   if (pay.complaintId && !pay.complaints.find(k => k.id === pay.complaintId)) {
@@ -317,14 +414,13 @@ async function loadComplaintQueue() {
 function renderComplaintQueue() {
   const pay = STATE.payment;
   setHtml('ttComplaintListBody', pay.complaints.map(k => `
-    <tr onclick="ttSelectComplaint(${k.id})" class="cursor-pointer transition ${k.id === pay.complaintId ? 'bg-indigo-50' : 'hover:bg-slate-50'}">
-      <td class="py-2 px-3 font-mono font-bold text-sky-700">${escapeHtml(k.maYeuCau)}</td>
-      <td class="py-2 px-3 font-semibold">${escapeHtml(k.hoTen || '—')} <span class="text-slate-400 font-normal">(${escapeHtml(k.maNhanSu || '')})</span></td>
-      <td class="py-2 px-3">${k.tenCa ? `${escapeHtml(k.tenCa)} ${fmtDate(k.ngay)}` : '<span class="text-slate-400">Không rõ ca</span>'}</td>
-      <td class="py-2 px-3">${escapeHtml(k.tenTuan || '—')}</td>
-      <td class="py-2 px-3 text-slate-500">${fmtDateTime(k.ngayGui)}</td>
-      <td class="py-2 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${k.trangThai === 'CHO_XU_LY' ? 'bg-amber-100 text-amber-800' : k.trangThai === 'DA_XU_LY' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-700'}">${escapeHtml(TRANG_THAI_KHIEU_NAI[k.trangThai] || k.trangThai)}</span></td>
-    </tr>`).join('') || '<tr><td colspan="6" class="py-6 text-center text-slate-400 italic">Không có khiếu nại nào.</td></tr>');
+    <tr onclick="ttSelectComplaint(${k.id})" class="cursor-pointer ${k.id === pay.complaintId ? 'is-selected' : ''}">
+      <td class="mono">${escapeHtml(k.maYeuCau)}</td>
+      <td><div class="cell-strong">${escapeHtml(k.hoTen || '—')}</div><div class="cell-sub">${escapeHtml(k.maNhanSu || '')}</div></td>
+      <td>${k.tenCa ? `${escapeHtml(k.tenCa)} <span class="cell-sub num">${fmtDate(k.ngay)}</span>` : '<span class="cell-sub">—</span>'}</td>
+      <td class="num cell-sub">${fmtDateTime(k.ngayGui)}</td>
+      <td>${badge(TRANG_THAI_KHIEU_NAI[k.trangThai] || k.trangThai, KN_TONE[k.trangThai] || 'neutral')}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty">Không có khiếu nại nào.</td></tr>');
 }
 
 function ttSelectComplaint(id) {
@@ -340,23 +436,21 @@ function renderComplaintDetail() {
   if (panel) panel.classList.toggle('hidden', !k);
   if (!k) return;
 
-  setText('kn5Header', `${k.maYeuCau} – ${k.hoTen || ''} (${k.maNhanSu || ''}) • ${k.tenKhoa || ''}`);
-  setText('kn5Time', k.tenCa ? `${THU_LABEL[k.thu] || ''} (${fmtDate(k.ngay)}) – Ca ${k.tenCa} (${k.thoiGian})` : 'Không gắn ca cụ thể');
-  setText('kn5Assign', k.vaiTro ? `${VAI_TRO_LABEL[k.vaiTro] || k.vaiTro}${k.dieuDongNgoaiDangKy ? ' • điều động ngoài đăng ký' : ''}` : '—');
-  setText('kn5Type', k.loaiCa ? `${k.loaiCa === 'NGOAI_GIO' ? 'Ngoài giờ' : 'Chính'} • Hệ số thù lao: ${Number(k.heSo || 1).toFixed(1)}` : '—');
+  setText('kn5Header', `${k.hoTen || ''} · ${k.maYeuCau}`);
+  setText('kn5Time', k.tenCa ? `${THU_LABEL[k.thu] || ''} ${fmtDate(k.ngay)} · Ca ${k.tenCa} (${k.thoiGian})` : '—');
+  setText('kn5Assign', k.vaiTro ? `${VAI_TRO_LABEL[k.vaiTro] || k.vaiTro}${k.dieuDongNgoaiDangKy ? ' (điều động)' : ''}` : '—');
+  setText('kn5Type', k.loaiCa ? `${k.loaiCa === 'NGOAI_GIO' ? 'Ngoài giờ' : 'Chính'} · ×${Number(k.heSo || 1).toFixed(1)}` : '—');
   setText('kn5Week', k.tenTuan || '—');
   setText('kn5Check', k.trangThaiChamCong
-    ? `${TRANG_THAI_CHAM_CONG[k.trangThaiChamCong] || k.trangThaiChamCong} (${k.gioCheckIn || '--:--'} → ${k.gioCheckOut || '--:--'})`
-    : 'Không có bản ghi máy chấm công');
+    ? `${TRANG_THAI_CHAM_CONG[k.trangThaiChamCong] || k.trangThaiChamCong} (${k.gioCheckIn || '--:--'} – ${k.gioCheckOut || '--:--'})`
+    : 'Không có dữ liệu');
   setText('kn5Note', k.ghiChuChamCong || '—');
   setText('kn5Content', k.noiDung || '—');
-  setText('kn5Proof', k.minhChung || 'Không đính kèm');
+  setText('kn5Proof', k.minhChung || '—');
 
   const open = k.trangThai === 'CHO_XU_LY';
   document.querySelectorAll('#ttAdjustForm input, #ttAdjustForm select, #ttAdjustForm textarea, #ttAdjustForm button')
     .forEach(el => { el.disabled = !open; });
-  const form = document.getElementById('ttAdjustForm');
-  if (form) form.classList.toggle('opacity-60', !open);
 
   if (open) {
     const typeSel = document.getElementById('ttAdjType');
@@ -369,8 +463,8 @@ function renderComplaintDetail() {
   } else {
     const dc = k.dieuChinh;
     setText('ttAdjResult', k.trangThai === 'DA_XU_LY'
-      ? `Đã xử lý bởi ${k.nguoiXuLy || '—'} lúc ${fmtDateTime(k.ngayXuLy)}: +${dc?.soCaChinh || 0} ca chính, +${dc?.soCaNgoaiGio || 0} ca ngoài giờ, tổng điều chỉnh ${fmtMoney(dc?.soTien)}. Lý do: ${k.lyDoPhanHoi || ''}`
-      : `Đã từ chối bởi ${k.nguoiXuLy || '—'} lúc ${fmtDateTime(k.ngayXuLy)}. Lý do: ${k.lyDoPhanHoi || ''}`);
+      ? `Đã duyệt ${fmtDateTime(k.ngayXuLy)} bởi ${k.nguoiXuLy || '—'}: +${dc?.soCaChinh || 0} ca chính, +${dc?.soCaNgoaiGio || 0} ca ngoài giờ, điều chỉnh ${fmtMoney(dc?.soTien)}. ${k.lyDoPhanHoi || ''}`
+      : `Đã từ chối ${fmtDateTime(k.ngayXuLy)} bởi ${k.nguoiXuLy || '—'}. ${k.lyDoPhanHoi || ''}`);
   }
 }
 
@@ -394,7 +488,7 @@ async function ttSaveAdjustment() {
       khauTru: Number(document.getElementById('ttAdjPenalty')?.value || 0),
       lyDo: document.getElementById('ttAdjReason')?.value.trim()
     });
-    showToast(`${res.message}: ${fmtMoney(res.data.dieuChinh?.soTien)}`);
+    showToast(`Đã duyệt điều chỉnh ${fmtMoney(res.data.dieuChinh?.soTien)}`);
     await loadComplaintQueue();
   } catch (err) {
     handleError(err);
@@ -407,7 +501,8 @@ async function ttRejectComplaint() {
   if (!k) return;
   const lyDo = document.getElementById('ttAdjReason')?.value.trim();
   if (!lyDo) {
-    showToast('Nhập lý do từ chối vào ô "Lý do" trước khi từ chối', false);
+    showToast('Nhập kết luận trước khi từ chối', false);
+    document.getElementById('ttAdjReason')?.focus();
     return;
   }
   try {
@@ -436,29 +531,34 @@ SCREEN_LOADERS['screen-TT06'] = () => {
   }
   const dept = pay.depts.find(d => d.khoaId === pay.deptId);
   const l = ns.luong;
-  setText('ttPayStaffName', `${ns.hoTen} (${ns.maNhanSu})`);
-  setText('ttPayDept', `${dept?.tenKhoa || ''} (${pay.week.ten})`);
-  setText('ttPayBreakdown', `${l.soCaChinh} ca chính × ${fmtMoney(l.donGiaCa)} + ${l.soCaNgoaiGio} ca ngoài giờ × ${fmtMoney(l.donGiaCa)} × ${Number(l.heSoNgoaiGio).toFixed(1)}`
-    + (Number(l.tienDieuChinh) !== 0 ? ` + điều chỉnh ${fmtMoney(l.tienDieuChinh)}` : ''));
-  setText('ttPayFinalAmount', fmtMoney(l.tongThucLinh).replace('đ', ' VNĐ'));
-
-  // Thông tin tài khoản nhận được backend lấy từ hồ sơ nhân sự khi chi trả;
-  // ở đây chỉ hiển thị trạng thái khai báo.
-  setText('payBankNote', `PKMedCare TT Luong ${pay.week.ten} ${ns.maNhanSu}`);
+  setText('ttPayStaffName', `${ns.hoTen} · ${ns.maNhanSu}`);
+  setText('ttPayDept', `${dept?.tenKhoa || ''} · ${pay.week.ten}`);
+  setText('ttPayBreakdown', `${l.soCaChinh} × ${fmtMoney(l.donGiaCa)} + ${l.soCaNgoaiGio} × ${fmtMoney(l.donGiaCa)} × ${Number(l.heSoNgoaiGio).toFixed(1)}`
+    + (Number(l.tienDieuChinh) !== 0 ? ` + ${fmtMoney(l.tienDieuChinh)} điều chỉnh` : ''));
+  setText('ttPayFinalAmount', fmtMoney(l.tongThucLinh));
+  setText('payBankNote', `CLINIC ${pay.week.ten} ${ns.maNhanSu}`);
   selectPaymentMethod('online');
 };
 
+function ttGenerateTxnCode(silent) {
+  const ns = STATE.payment.payTarget;
+  const isOnline = document.getElementById('payRadioOnline')?.checked !== false;
+  const prefix = isOnline ? 'CK' : 'TM';
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  const code = `${prefix}-${ns ? ns.maNhanSu : 'NS'}-${rand}`;
+  setInput('payTxnCode', code);
+  if (!silent) showToast(`Mã giao dịch: ${code}`);
+}
+
 function selectPaymentMethod(method) {
-  const onlineCard = document.getElementById('payOptionOnline');
-  const cashCard = document.getElementById('payOptionCash');
+  const online = method === 'online';
   const rOnline = document.getElementById('payRadioOnline');
   const rCash = document.getElementById('payRadioCash');
-  const active = 'p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 cursor-pointer transition flex items-start gap-3';
-  const idle = 'p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition flex items-start gap-3';
-  if (rOnline) rOnline.checked = method === 'online';
-  if (rCash) rCash.checked = method !== 'online';
-  if (onlineCard) onlineCard.className = method === 'online' ? active : idle;
-  if (cashCard) cashCard.className = method === 'online' ? idle : active;
+  if (rOnline) rOnline.checked = online;
+  if (rCash) rCash.checked = !online;
+  document.getElementById('payOptionOnline')?.classList.toggle('is-active', online);
+  document.getElementById('payOptionCash')?.classList.toggle('is-active', !online);
+  ttGenerateTxnCode(true);
 }
 
 async function executePayment() {
@@ -473,7 +573,7 @@ async function executePayment() {
       hinhThucThanhToan: isOnline ? 'TRUC_TUYEN' : 'TRUC_TIEP',
       maGiaoDich: document.getElementById('payTxnCode')?.value.trim() || null
     });
-    showToast(res.message || 'Đã thanh toán');
+    showToast(res.message || 'Đã chi trả');
     pay.slip = res.data;
     pay.slipBackScreen = 'screen-TT02';
     navigateTo('screen-TT07');
@@ -504,116 +604,86 @@ SCREEN_LOADERS['screen-TT07'] = () => {
   const paid = p.trangThai === 'DA_THANH_TOAN';
   setText('tt7Ma', p.maPhieu);
   setHtml('tt7Status', paid
-    ? '<i class="fa-solid fa-circle-check mr-1"></i> Đã thanh toán'
-    : '<i class="fa-solid fa-clock mr-1"></i> Chưa thanh toán');
+    ? badge(`Đã thanh toán${p.ngayThanhToan ? ' · ' + fmtDate(p.ngayThanhToan) : ''}`, 'success')
+    : badge('Chưa thanh toán', 'warning'));
 
   const hinhThuc = p.hinhThucThanhToan === 'TRUC_TUYEN'
-    ? `Chuyển khoản trực tuyến${p.nganHangNhan ? ' (' + p.nganHangNhan + ')' : ''}`
-    : 'Tiền mặt tại quầy';
-  const dcRows = (p.dieuChinh || []).map((d, i) => `
-    <tr class="bg-amber-50/60">
-      <td class="py-2 px-3 border-r border-slate-200">${3 + i}. Điều chỉnh theo khiếu nại ${escapeHtml(d.maYeuCau)}
-        <div class="text-[10px] text-slate-500 italic">${escapeHtml(d.lyDo || '')}</div></td>
-      <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold">${d.soCaChinh ? '+' + d.soCaChinh + ' chính ' : ''}${d.soCaNgoaiGio ? '+' + d.soCaNgoaiGio + ' ngoài giờ' : ''}${!d.soCaChinh && !d.soCaNgoaiGio ? '-' : ''}</td>
-      <td class="py-2 px-3 text-right border-r border-slate-200">${fmtMoney(p.donGiaCa)}</td>
-      <td class="py-2 px-3 text-center border-r border-slate-200">-</td>
-      <td class="py-2 px-3 text-right font-medium ${Number(d.soTien) >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${Number(d.soTien) >= 0 ? '+' : ''}${fmtMoney(d.soTien)}</td>
-    </tr>`).join('');
-  const n = 3 + (p.dieuChinh || []).length;
+    ? `Chuyển khoản${p.nganHangNhan ? ' · ' + p.nganHangNhan : ''}`
+    : 'Tiền mặt';
+  const row = (label, qty, price, coef, amount, sub) => `
+    <tr>
+      <td>${label}${sub ? `<div class="cell-sub">${sub}</div>` : ''}</td>
+      <td class="text-center num">${qty}</td>
+      <td class="text-right num">${price}</td>
+      <td class="text-center num">${coef}</td>
+      <td class="text-right num cell-strong">${amount}</td>
+    </tr>`;
+  const dcRows = (p.dieuChinh || []).map(d => row(
+    `Điều chỉnh theo khiếu nại ${escapeHtml(d.maYeuCau)}`,
+    [d.soCaChinh ? `+${d.soCaChinh} chính` : '', d.soCaNgoaiGio ? `+${d.soCaNgoaiGio} ngoài giờ` : ''].filter(Boolean).join(', ') || '—',
+    '—', '—', `${Number(d.soTien) >= 0 ? '+' : ''}${fmtMoney(d.soTien)}`, escapeHtml(d.lyDo || ''))).join('');
   const phuCap = Number(p.phuCapTrachNhiem || 0) + Number(p.thuong || 0);
 
   setHtml('printable-receipt', `
-    <div class="flex items-start justify-between border-b-2 border-slate-800 pb-4">
+    <div class="flex items-start justify-between gap-6 pb-6" style="border-bottom:1px solid var(--hairline)">
       <div>
-        <h2 class="text-xs font-semibold text-slate-600">HỆ THỐNG QUẢN LÝ PHÒNG KHÁM TƯ MEDCARE</h2>
-        <p class="text-[10px] text-slate-500 mt-0.5">Phiếu chi trả thù lao nhân sự y tế theo tuần</p>
+        <div class="flex items-center gap-2 text-ink"><img src="img/logo-mark.svg" alt="" width="24" height="24"><span class="brand-name">Clinic</span></div>
+        <h2 class="text-xl font-semibold mt-4">Phiếu chi trả thù lao</h2>
+        <div class="text-muted mt-1">${escapeHtml(p.tenTuan)} · ${fmtDate(p.tuNgay)} – ${fmtDate(p.denNgay)}</div>
       </div>
-      <div class="text-right">
-        <span class="text-[10px] font-mono text-slate-400 block">Mã số phiếu: ${escapeHtml(p.maPhieu)}</span>
-        <span class="text-[10px] text-slate-500 block">Ngày thanh toán: ${p.ngayThanhToan ? fmtDate(p.ngayThanhToan) : '—'}</span>
-        ${p.maGiaoDich ? `<span class="text-[10px] text-slate-500 block">Mã giao dịch: ${escapeHtml(p.maGiaoDich)}</span>` : ''}
-        <span class="text-xs font-bold ${paid ? 'text-emerald-700' : 'text-amber-700'} block mt-1 uppercase">${paid ? 'ĐÃ THANH TOÁN (PAID)' : 'CHƯA THANH TOÁN'}</span>
-      </div>
+      <dl class="text-right text-[13px] space-y-1">
+        <div><span class="text-muted">Số phiếu </span><span class="mono text-ink">${escapeHtml(p.maPhieu)}</span></div>
+        <div><span class="text-muted">Ngày chi </span><span class="num text-ink">${p.ngayThanhToan ? fmtDate(p.ngayThanhToan) : '—'}</span></div>
+        ${p.maGiaoDich ? `<div><span class="text-muted">Mã giao dịch </span><span class="mono text-ink">${escapeHtml(p.maGiaoDich)}</span></div>` : ''}
+      </dl>
     </div>
-    <div class="text-center py-2">
-      <h2 class="text-xl font-bold uppercase tracking-wide text-slate-900">PHIẾU CHI TRẢ TIỀN CÔNG NHÂN SỰ Y TẾ</h2>
-      <p class="text-xs text-slate-500 mt-0.5">Kỳ quyết toán: ${escapeHtml(p.tenTuan)} (Từ ngày ${fmtDate(p.tuNgay)} đến hết ngày ${fmtDate(p.denNgay)})</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 py-6">
+      <dl class="kv" style="grid-template-columns:110px 1fr">
+        <dt>Họ và tên</dt><dd class="font-medium">${escapeHtml(p.hoTen)}</dd>
+        <dt>Mã nhân sự</dt><dd class="mono">${escapeHtml(p.maNhanSu)}</dd>
+        <dt>Chức danh</dt><dd>${escapeHtml(p.chucDanh)}${p.hocVi ? ' · ' + escapeHtml(p.hocVi) : ''}</dd>
+      </dl>
+      <dl class="kv" style="grid-template-columns:110px 1fr">
+        <dt>Khoa</dt><dd>${escapeHtml(p.tenKhoa || '—')}</dd>
+        <dt>Hình thức</dt><dd>${escapeHtml(hinhThuc)}</dd>
+        ${p.hinhThucThanhToan === 'TRUC_TUYEN' && p.soTaiKhoanNhan ? `<dt>Tài khoản</dt><dd class="mono">${escapeHtml(p.soTaiKhoanNhan)}${p.chuTaiKhoanNhan ? ' · ' + escapeHtml(p.chuTaiKhoanNhan) : ''}</dd>` : ''}
+      </dl>
     </div>
-    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+
+    <table class="table" style="border:1px solid var(--hairline)">
+      <thead>
+        <tr>
+          <th>Khoản mục</th>
+          <th class="text-center">Số ca</th>
+          <th class="text-right">Đơn giá</th>
+          <th class="text-center">Hệ số</th>
+          <th class="text-right">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${row('Ca chính', p.soCaChinh, fmtMoney(p.donGiaCa), '1.0', fmtMoney(p.tienCaChinh))}
+        ${row('Ca ngoài giờ', p.soCaNgoaiGio, fmtMoney(p.donGiaCa), Number(p.heSoNgoaiGio).toFixed(1), fmtMoney(p.tienCaNgoaiGio))}
+        ${dcRows}
+        ${phuCap ? row('Phụ cấp / thưởng', '—', '—', '—', fmtMoney(phuCap)) : ''}
+        ${Number(p.phat || 0) ? row('Khấu trừ', '—', '—', '—', `−${fmtMoney(p.phat)}`) : ''}
+      </tbody>
+    </table>
+
+    <div class="flex items-baseline justify-between pt-5">
+      <span class="text-muted">Tổng thực lĩnh</span>
+      <span class="text-2xl font-semibold text-ink num">${fmtMoney(p.tongThucLinh)}</span>
+    </div>
+    <div class="text-right text-[13px] text-muted mt-1">${escapeHtml(numberToVietnameseWords(p.tongThucLinh))} chẵn</div>
+
+    <div class="grid grid-cols-2 gap-6 pt-12 text-center text-[13px]">
       <div>
-        <div>Họ và tên: <strong class="font-bold text-slate-900">${escapeHtml(p.hoTen)}</strong></div>
-        <div>Mã nhân sự: <strong class="font-mono">${escapeHtml(p.maNhanSu)}</strong></div>
-        <div>Chức danh: <strong>${escapeHtml(p.chucDanh)}</strong></div>
+        <div class="font-medium text-ink">Người lập phiếu</div>
+        <div class="mt-14 text-ink">${escapeHtml(p.tenKeToan || '')}</div>
       </div>
       <div>
-        <div>Khoa trực thuộc: <strong>${escapeHtml(p.tenKhoa || '—')}</strong></div>
-        <div>Học vị / Trình độ: <strong>${escapeHtml(p.hocVi || '—')}</strong></div>
-        <div>Hình thức chi trả: <strong class="text-emerald-700">${escapeHtml(hinhThuc)}</strong></div>
-        ${p.hinhThucThanhToan === 'TRUC_TUYEN' && p.soTaiKhoanNhan ? `<div>Tài khoản nhận: <strong>${escapeHtml(p.soTaiKhoanNhan)} – ${escapeHtml(p.chuTaiKhoanNhan || '')}</strong></div>` : ''}
-      </div>
-    </div>
-    <div>
-      <h3 class="font-bold text-xs uppercase tracking-wider mb-2 text-slate-700">Chi tiết ca trực & tính toán thù lao:</h3>
-      <table class="w-full text-xs text-left border border-slate-300">
-        <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-300">
-          <tr>
-            <th class="py-2 px-3 border-r border-slate-300">Mục thù lao</th>
-            <th class="py-2 px-3 text-center border-r border-slate-300">Số lượng ca</th>
-            <th class="py-2 px-3 text-right border-r border-slate-300">Đơn giá cơ bản</th>
-            <th class="py-2 px-3 text-center border-r border-slate-300">Hệ số</th>
-            <th class="py-2 px-3 text-right">Thành tiền (VNĐ)</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200">
-          <tr>
-            <td class="py-2 px-3 border-r border-slate-200">1. Ca trực chính</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold">${p.soCaChinh} ca</td>
-            <td class="py-2 px-3 text-right border-r border-slate-200">${fmtMoney(p.donGiaCa)}</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">1.0</td>
-            <td class="py-2 px-3 text-right font-medium">${fmtMoney(p.tienCaChinh)}</td>
-          </tr>
-          <tr>
-            <td class="py-2 px-3 border-r border-slate-200">2. Ca trực ngoài giờ</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200 font-semibold">${p.soCaNgoaiGio} ca</td>
-            <td class="py-2 px-3 text-right border-r border-slate-200">${fmtMoney(p.donGiaCa)}</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">${Number(p.heSoNgoaiGio).toFixed(1)}</td>
-            <td class="py-2 px-3 text-right font-medium">${fmtMoney(p.tienCaNgoaiGio)}</td>
-          </tr>
-          ${dcRows}
-          <tr>
-            <td class="py-2 px-3 border-r border-slate-200">${n}. Phụ cấp trách nhiệm / Thưởng</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-right border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-right font-medium">${fmtMoney(phuCap)}</td>
-          </tr>
-          <tr>
-            <td class="py-2 px-3 border-r border-slate-200">${n + 1}. Khấu trừ vi phạm</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-right border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-center border-r border-slate-200">-</td>
-            <td class="py-2 px-3 text-right font-medium">${Number(p.phat || 0) ? '-' : ''}${fmtMoney(p.phat)}</td>
-          </tr>
-        </tbody>
-        <tfoot class="border-t-2 border-slate-800 bg-slate-50 text-slate-900 font-bold">
-          <tr>
-            <td colspan="4" class="py-3 px-4 text-right text-xs uppercase">TỔNG TIỀN THỰC LĨNH:</td>
-            <td class="py-3 px-4 text-right text-base text-emerald-700 font-bold">${fmtMoney(p.tongThucLinh).replace('đ', ' VNĐ')}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="italic text-[11px] text-slate-500">(Bằng chữ: ${escapeHtml(numberToVietnameseWords(p.tongThucLinh))} chẵn./.)</div>
-    <div class="grid grid-cols-2 gap-4 pt-8 text-center text-xs">
-      <div>
-        <div class="font-bold">Người lập phiếu</div>
-        <div class="text-[10px] text-slate-400 italic">(Ký, ghi rõ họ tên)</div>
-        <div class="mt-14 font-semibold text-slate-800">${escapeHtml(p.tenKeToan || '')}</div>
-      </div>
-      <div>
-        <div class="font-bold">Nhân sự nhận thù lao</div>
-        <div class="text-[10px] text-slate-400 italic">(Xác nhận điện tử qua hệ thống)</div>
-        <div class="mt-14 font-semibold text-emerald-700"><i class="fa-solid fa-signature"></i> ${escapeHtml(p.hoTen)}</div>
+        <div class="font-medium text-ink">Người nhận</div>
+        <div class="mt-14 text-ink">${escapeHtml(p.hoTen)}</div>
       </div>
     </div>`);
 };
@@ -623,28 +693,93 @@ SCREEN_LOADERS['screen-TT07'] = () => {
 // ==========================================
 SCREEN_LOADERS['screen-TT08'] = async () => {
   const u = STATE.user;
-  setText('tt8Sub', `Nhân sự: ${displayName(u)} (Mã NS: ${u.maNhanSu}) • ${u.tenKhoa || ''}`);
-  setTableMessage('tt8Body', 7, 'Đang tải phiếu lương...');
+  setText('tt8Sub', [u.maNhanSu, u.tenKhoa].filter(Boolean).join(' · '));
+  setTableMessage('tt8Body', 7, 'Đang tải…');
   const slips = await MedcareAPI.getMySlips();
   STATE.payment.mySlips = slips;
   setHtml('tt8Body', slips.map(p => `
-    <tr class="hover:bg-slate-50/80">
-      <td class="py-3 px-4 font-mono font-bold text-sky-700">${escapeHtml(p.maPhieu)}</td>
-      <td class="py-3 px-4 font-medium">${escapeHtml(p.tenTuan)} (${fmtDateShort(p.tuNgay)} - ${fmtDate(p.denNgay)})</td>
-      <td class="py-3 px-4 text-center font-semibold">${p.soCaChinh + p.soCaNgoaiGio} ca (${p.soCaChinh} chính, ${p.soCaNgoaiGio} ngoài giờ)</td>
-      <td class="py-3 px-4 text-right font-bold text-emerald-600">${fmtMoney(p.tongThucLinh)}</td>
-      <td class="py-3 px-4"><span class="${p.hinhThucThanhToan === 'TRUC_TUYEN' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'} text-[10px] font-semibold px-2 py-0.5 rounded">${p.hinhThucThanhToan === 'TRUC_TUYEN' ? 'Trực tuyến' : 'Tiền mặt tại quầy'}</span></td>
-      <td class="py-3 px-4 text-slate-500">${p.ngayThanhToan ? fmtDate(p.ngayThanhToan) : '—'}</td>
-      <td class="py-3 px-4 text-center">
-        <button onclick="ttViewMySlip(${p.id})" class="px-2.5 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded text-xs font-semibold">
-          <i class="fa-solid fa-eye mr-1"></i> Xem phiếu
-        </button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="7" class="py-6 text-center text-slate-400 italic">Bạn chưa có phiếu lương nào.</td></tr>');
+    <tr>
+      <td class="mono">${escapeHtml(p.maPhieu)}</td>
+      <td><div class="cell-strong">${escapeHtml(p.tenTuan)}</div><div class="cell-sub num">${fmtDateShort(p.tuNgay)} – ${fmtDate(p.denNgay)}</div></td>
+      <td class="text-center num">${p.soCaChinh + p.soCaNgoaiGio}</td>
+      <td class="text-right num cell-strong">${fmtMoney(p.tongThucLinh)}</td>
+      <td>${p.hinhThucThanhToan === 'TRUC_TUYEN' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
+      <td class="num cell-sub">${p.ngayThanhToan ? fmtDate(p.ngayThanhToan) : '—'}</td>
+      <td class="text-right"><button onclick="ttViewMySlip(${p.id})" class="btn btn-secondary btn-sm">Xem</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">Chưa có phiếu lương.</td></tr>');
 };
 
 function ttViewMySlip(id) {
   STATE.payment.slip = (STATE.payment.mySlips || []).find(p => p.id === id);
   STATE.payment.slipBackScreen = 'screen-TT08';
+  navigateTo('screen-TT07');
+}
+
+// ==========================================
+// TT09: PHIẾU LƯƠNG – DANH SÁCH TOÀN VIỆN (Kế toán)
+// ==========================================
+SCREEN_LOADERS['screen-TT09'] = loadWeeklySlips;
+
+async function loadWeeklySlips() {
+  const pay = STATE.payment;
+  pay.slipWeek = pay.slipWeek || pay.week || pickPaymentWeek();
+  pay.slipFilter = pay.slipFilter || 'ALL';
+  setHtml('tt9WeekSelect', weekOptionsHtml(pay.slipWeek?.id));
+  tt9SetFilter(pay.slipFilter, true);
+  if (!pay.slipWeek) {
+    setTableMessage('tt9Body', 8, 'Chưa có tuần làm việc nào.');
+    return;
+  }
+  setText('tt9Meta', `${pay.slipWeek.ten} · ${fmtDate(pay.slipWeek.ngayBatDau)} – ${fmtDate(pay.slipWeek.ngayKetThuc)}`);
+  setTableMessage('tt9Body', 8, 'Đang tải…');
+  pay.weeklySlips = await MedcareAPI.getWeeklySlips(pay.slipWeek.id);
+
+  const paid = pay.weeklySlips.filter(p => p.trangThai === 'DA_THANH_TOAN');
+  const online = paid.filter(p => p.hinhThucThanhToan === 'TRUC_TUYEN').length;
+  setText('tt9Count', `${pay.weeklySlips.length}`);
+  setText('tt9Total', fmtMoney(paid.reduce((sum, p) => sum + Number(p.tongThucLinh || 0), 0)));
+  setText('tt9Methods', `${online} / ${paid.length - online}`);
+  renderTt9List();
+}
+
+function tt9ChangeWeek(weekId) {
+  STATE.payment.slipWeek = findWeek(weekId);
+  loadWeeklySlips().catch(handleError);
+}
+
+function tt9SetFilter(mode, skipRender) {
+  STATE.payment.slipFilter = mode || 'ALL';
+  setSegmented(['tt9FilterAll', 'tt9FilterOnline', 'tt9FilterCash'],
+    { ALL: 'tt9FilterAll', TRUC_TUYEN: 'tt9FilterOnline', TRUC_TIEP: 'tt9FilterCash' }[STATE.payment.slipFilter]);
+  if (!skipRender) renderTt9List();
+}
+
+function renderTt9List() {
+  const pay = STATE.payment;
+  const q = (document.getElementById('tt9Search')?.value || '').toLowerCase().trim();
+  const mode = pay.slipFilter || 'ALL';
+  const rows = (pay.weeklySlips || []).filter(p => {
+    if (mode !== 'ALL' && p.hinhThucThanhToan !== mode) return false;
+    if (!q) return true;
+    return [p.maPhieu, p.hoTen, p.maNhanSu, p.tenKhoa].some(v => String(v || '').toLowerCase().includes(q));
+  });
+  setHtml('tt9Body', rows.map(p => `
+    <tr>
+      <td class="mono">${escapeHtml(p.maPhieu)}</td>
+      <td><div class="cell-strong">${escapeHtml(p.hoTen)}</div><div class="cell-sub">${escapeHtml(p.maNhanSu)} · ${escapeHtml(p.chucDanh || '')}</div></td>
+      <td>${escapeHtml(p.tenKhoa || '—')}</td>
+      <td class="text-center num">${p.soCaChinh + p.soCaNgoaiGio}</td>
+      <td class="text-right num cell-strong">${fmtMoney(p.tongThucLinh)}</td>
+      <td>${p.hinhThucThanhToan === 'TRUC_TUYEN' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
+      <td class="num cell-sub">${p.ngayThanhToan ? fmtDate(p.ngayThanhToan) : '—'}</td>
+      <td class="text-right"><button onclick="tt9ViewSlip(${p.id})" class="btn btn-secondary btn-sm">Xem</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" class="empty">Không có phiếu lương nào.</td></tr>');
+}
+
+function tt9ViewSlip(id) {
+  const p = (STATE.payment.weeklySlips || []).find(x => x.id === id);
+  if (!p) return;
+  STATE.payment.slip = p;
+  STATE.payment.slipBackScreen = 'screen-TT09';
   navigateTo('screen-TT07');
 }

@@ -11,8 +11,16 @@ import lombok.*;
 @AllArgsConstructor
 public class KhieuNaiRequest {
     @NotNull(message = "ID phân công ca không được để trống")
-    @JsonAlias({"caLamViecId", "phanCongCaId"})
-    private Long phanCongCaId;
+    @JsonAlias({"caLamViecId", "phanCongCaId", "bangPhanCongId"})
+    private Long bangPhanCongId;
+
+    public Long getPhanCongCaId() {
+        return bangPhanCongId;
+    }
+
+    public void setPhanCongCaId(Long phanCongCaId) {
+        this.bangPhanCongId = phanCongCaId;
+    }
 
     @NotBlank(message = "Nội dung khiếu nại không được để trống")
     @JsonAlias({"lyDo", "noiDung"})

@@ -47,7 +47,7 @@ const STATE = {
 const ROLE_SCREENS = {
   NHAN_SU: ['screen-C02', 'screen-C05', 'screen-DK01', 'screen-TT03', 'screen-TT07', 'screen-TT08'],
   QUAN_LY: ['screen-C03', 'screen-C05', 'screen-PC01', 'screen-PC02'],
-  KE_TOAN: ['screen-C04', 'screen-C05', 'screen-TT01', 'screen-TT02', 'screen-TT03', 'screen-TT05', 'screen-TT06', 'screen-TT07']
+  KE_TOAN: ['screen-C04', 'screen-C05', 'screen-TT01', 'screen-TT02', 'screen-TT03', 'screen-TT05', 'screen-TT06', 'screen-TT07', 'screen-TT09']
 };
 
 const ROLE_HOME = { NHAN_SU: 'screen-C02', QUAN_LY: 'screen-C03', KE_TOAN: 'screen-C04' };
@@ -75,7 +75,7 @@ const TRANG_THAI_CHAM_CONG = {
   VE_SOM: 'Về sớm',
   VANG_MAT: 'Vắng mặt',
   LOI_THIET_BI: 'Thiếu dữ liệu quẹt thẻ',
-  CHUA_CO_DU_LIEU: 'Theo lịch (chưa có dữ liệu máy chấm công)'
+  CHUA_CO_DU_LIEU: 'Chưa có dữ liệu'
 };
 
 const TRANG_THAI_KHIEU_NAI = { CHO_XU_LY: 'Chờ xử lý', DA_XU_LY: 'Đã xử lý', TU_CHOI: 'Bị từ chối' };
@@ -121,27 +121,85 @@ function fmtTime(t) {
   return t ? String(t).slice(0, 5) : '--:--';
 }
 
+/** Ngày hiện tại định dạng YYYY-MM-DD theo giờ máy tính. */
+function localDateIso(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Kiểm tra tuần w có phải Tuần làm việc hiện tại (chứa ngày hôm nay) không. */
+function isCurrentWeek(w) {
+  if (!w || !w.ngayBatDau || !w.ngayKetThuc) return false;
+  const today = localDateIso();
+  return w.ngayBatDau <= today && today <= w.ngayKetThuc;
+}
+
+/** Kiểm tra tuần w có phải Tuần làm việc kế tiếp (chứa ngày hôm nay + 7 ngày) không. */
+function isNextWeek(w) {
+  if (!w || !w.ngayBatDau || !w.ngayKetThuc) return false;
+  const next = new Date();
+  next.setDate(next.getDate() + 7);
+  const nextIso = localDateIso(next);
+  return w.ngayBatDau <= nextIso && nextIso <= w.ngayKetThuc;
+}
+
+/** Nhãn phân biệt tự động: Tuần hiện tại / Tuần kế tiếp / Tuần trước. */
+function weekRelationLabel(w) {
+  if (!w) return '';
+  if (isCurrentWeek(w)) return 'Tuần hiện tại';
+  if (isNextWeek(w)) return 'Tuần kế tiếp';
+  const today = localDateIso();
+  if (w.ngayKetThuc && w.ngayKetThuc < today) return 'Tuần trước';
+  if (w.ngayBatDau && w.ngayBatDau > today) return 'Tuần sắp tới';
+  return '';
+}
+
+function getCurrentWeek() {
+  return STATE.weeks.find(isCurrentWeek) || null;
+}
+
+function getNextWeek() {
+  return STATE.weeks.find(isNextWeek) || null;
+}
+
 function weekLabel(w) {
-  return w ? `${w.ten} (${fmtDate(w.ngayBatDau)} – ${fmtDate(w.ngayKetThuc)})` : '—';
+  if (!w) return '—';
+  const rel = weekRelationLabel(w);
+  return `${w.ten} (${fmtDate(w.ngayBatDau)} – ${fmtDate(w.ngayKetThuc)})${rel ? ' • ' + rel : ''}`;
 }
 
 function weekRange(w) {
-  return w ? `${fmtDate(w.ngayBatDau)} – ${fmtDate(w.ngayKetThuc)}` : '';
+  if (!w) return '';
+  const rel = weekRelationLabel(w);
+  return `${fmtDate(w.ngayBatDau)} – ${fmtDate(w.ngayKetThuc)}${rel ? ' (' + rel + ')' : ''}`;
 }
 
-/** Tuần đang mở đăng ký, nếu không có thì tuần mới nhất. */
+/** Tự động bắt Tuần kế tiếp (đang mở đăng ký) cho chức năng Đăng ký ca. */
 function pickRegistrationWeek() {
-  return STATE.weeks.find(w => w.trangThai === 'DANG_MO_DANG_KY') || STATE.weeks[0] || null;
+  return getNextWeek()
+    || STATE.weeks.find(w => w.trangThai === 'DANG_MO_DANG_KY')
+    || getCurrentWeek()
+    || STATE.weeks[0]
+    || null;
 }
 
-/** Tuần mới nhất chưa kết thúc (cần xếp lịch), nếu không có thì tuần mới nhất. */
+/** Tự động bắt Tuần kế tiếp cho chức năng Lên lịch & Phân công của Quản lý. */
 function pickSchedulingWeek() {
-  return STATE.weeks.find(w => w.trangThai !== 'KET_THUC') || STATE.weeks[0] || null;
+  return getNextWeek()
+    || STATE.weeks.find(w => w.trangThai !== 'KET_THUC')
+    || getCurrentWeek()
+    || STATE.weeks[0]
+    || null;
 }
 
-/** Tuần mới nhất đã kết thúc (cần quyết toán), nếu không có thì tuần mới nhất. */
+/** Tự động bắt Tuần hiện tại (hoặc tuần vừa kết thúc) cho chức năng Chấm công & Quyết toán. */
 function pickPaymentWeek() {
-  return STATE.weeks.find(w => w.trangThai === 'KET_THUC') || STATE.weeks[0] || null;
+  return getCurrentWeek()
+    || STATE.weeks.find(w => w.trangThai === 'KET_THUC')
+    || STATE.weeks[0]
+    || null;
 }
 
 function findWeek(id) {
@@ -149,9 +207,40 @@ function findWeek(id) {
 }
 
 function weekOptionsHtml(selectedId) {
-  return STATE.weeks.map(w =>
-    `<option value="${w.id}" ${String(w.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(weekLabel(w))} – ${escapeHtml(TRANG_THAI_TUAN[w.trangThai] || w.trangThai)}</option>`
-  ).join('');
+  return STATE.weeks.map(w => {
+    const rel = weekRelationLabel(w);
+    const text = `${w.ten} · ${fmtDateShort(w.ngayBatDau)} – ${fmtDateShort(w.ngayKetThuc)}${rel ? ' · ' + rel : ''}`;
+    return `<option value="${w.id}" ${String(w.id) === String(selectedId) ? 'selected' : ''}>${escapeHtml(text)}</option>`;
+  }).join('');
+}
+
+// ==========================================
+// THÀNH PHẦN GIAO DIỆN DÙNG CHUNG
+// ==========================================
+/** Badge trạng thái: tone = success | warning | danger | info | neutral */
+function badge(text, tone = 'neutral') {
+  return `<span class="badge badge-${tone}">${escapeHtml(text)}</span>`;
+}
+
+/** Thanh tiến độ mảnh. */
+function progressBar(done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return `<div class="progress ${total && done >= total ? 'is-done' : ''}"><span style="width:${pct}%"></span></div>`;
+}
+
+/** Bật trạng thái đang chọn cho một nhóm nút segmented theo id. */
+function setSegmented(ids, activeId) {
+  ids.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('is-active', id === activeId);
+  });
+}
+
+/** Chữ cái đầu cho avatar. */
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (parts.length === 1 ? parts[0][0] : parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 /** Đọc số tiền bằng chữ (tiếng Việt). */

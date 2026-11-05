@@ -17,8 +17,18 @@ public class TuanController {
 
     private final TuanService tuanService;
 
-    @GetMapping
+    @GetMapping({"", "/danh-sach"})
     public ResponseEntity<ApiResponse<List<TuanDTO>>> danhSach() {
         return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách tuần làm việc thành công", tuanService.danhSach()));
+    }
+
+    @GetMapping("/hien-tai")
+    public ResponseEntity<ApiResponse<TuanDTO>> tuanHienTai() {
+        return ResponseEntity.ok(ApiResponse.ok("Lấy tuần làm việc hiện tại thành công", tuanService.layTuanHienTai()));
+    }
+
+    @GetMapping("/ke-tiep")
+    public ResponseEntity<ApiResponse<TuanDTO>> tuanKeTiep() {
+        return ResponseEntity.ok(ApiResponse.ok("Lấy tuần làm việc kế tiếp thành công", tuanService.layTuanKeTiep()));
     }
 }

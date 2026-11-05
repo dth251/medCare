@@ -1,9 +1,10 @@
 package com.medcare.clinic.entity;
 
 import com.medcare.clinic.enums.TrangThaiChamCong;
-import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChamCong {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,13 +31,9 @@ public class ChamCong {
     @Column(columnDefinition = "TEXT")
     private String ghiChu;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bangPhanCongId")
     private BangPhanCong bangPhanCong;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "phanCongCaId")
-    private PhanCongCa phanCongCa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "phieuThanhToanId")

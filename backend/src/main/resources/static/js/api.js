@@ -71,6 +71,7 @@ const MedcareAPI = {
 
   get(endpoint) { return this.request(endpoint, { method: 'GET' }); },
   post(endpoint, body) { return this.request(endpoint, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }); },
+  put(endpoint, body) { return this.request(endpoint, { method: 'PUT', body: body === undefined ? undefined : JSON.stringify(body) }); },
   del(endpoint) { return this.request(endpoint, { method: 'DELETE' }); },
 
   /** Máy chủ đang chạy nếu trả về bất kỳ HTTP status nào (kể cả 401). */
@@ -93,6 +94,7 @@ const MedcareAPI = {
   },
 
   async me() { return (await this.get('/auth/me')).data; },
+  async updateProfile(profileData) { return (await this.put('/auth/profile', profileData)).data; },
 
   async getWeeks() { return (await this.get('/tuan')).data || []; },
 
@@ -125,6 +127,7 @@ const MedcareAPI = {
   async getTimesheet(nhanSuId, tuanId) { return (await this.get(`/thanh-toan/cham-cong/${nhanSuId}/tuan/${tuanId}`)).data || []; },
   async getSlip(phieuId) { return (await this.get(`/thanh-toan/phieu/${phieuId}`)).data; },
   async getMySlips() { return (await this.get('/thanh-toan/phieu-cua-toi/tat-ca')).data || []; },
+  async getWeeklySlips(tuanId) { return (await this.get(`/thanh-toan/tuan/${tuanId}`)).data || []; },
   executePayment(payload) { return this.post('/thanh-toan/chi-tra', payload); },
 
   submitComplaint(payload) { return this.post('/khieu-nai/gui', payload); },

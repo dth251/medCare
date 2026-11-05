@@ -4,11 +4,11 @@
  */
 
 function deptStatus(k) {
-  if (k.trangThaiBang === 'DA_CONG_BO') return { text: 'Đã công bố', cls: 'bg-sky-100 text-sky-800', full: true };
-  if (k.tongSoCa === 0) return { text: 'Không mở ca', cls: 'bg-slate-100 text-slate-500', full: true };
-  if (k.soCaDaDu >= k.tongSoCa) return { text: `Đã đủ (${k.soCaDaDu}/${k.tongSoCa} ca)`, cls: 'bg-emerald-100 text-emerald-800', full: true };
-  if (k.soCaDaDu === 0) return { text: `Chưa xếp (0/${k.tongSoCa} ca)`, cls: 'bg-rose-100 text-rose-800', full: false };
-  return { text: `Đang xếp (${k.soCaDaDu}/${k.tongSoCa} ca)`, cls: 'bg-amber-100 text-amber-800', full: false };
+  if (k.trangThaiBang === 'DA_CONG_BO') return { text: 'Đã công bố', tone: 'info', full: true };
+  if (k.tongSoCa === 0) return { text: 'Không mở ca', tone: 'neutral', full: true };
+  if (k.soCaDaDu >= k.tongSoCa) return { text: 'Đã đủ', tone: 'success', full: true };
+  if (k.soCaDaDu === 0) return { text: 'Chưa xếp', tone: 'danger', full: false };
+  return { text: 'Đang xếp', tone: 'warning', full: false };
 }
 
 // ==========================================
@@ -16,13 +16,13 @@ function deptStatus(k) {
 // ==========================================
 SCREEN_LOADERS['screen-C03'] = async () => {
   const u = STATE.user;
-  setText('c03Name', displayName(u));
-  setText('c03Ma', `Mã NV: ${u.maNhanSu}`);
+  setText('c03Name', u.fullName);
+  setText('c03Ma', [u.chucDanh, u.maNhanSu].filter(Boolean).join(' · '));
   const w = pickSchedulingWeek();
   STATE.scheduling.week = w;
   if (!w) return;
-  setText('c03WeekBtnText', `Lên lịch làm việc ${w.ten}`);
-  setText('c03ProgressLabel', `Tiến độ xếp lịch ${w.ten}`);
+  setText('c03WeekBtnText', `Xếp lịch ${w.ten}`);
+  setText('c03ProgressLabel', `Khoa đã xếp đủ · ${w.ten}`);
 
   const overview = await MedcareAPI.getScheduleOverview(w.id);
   STATE.scheduling.overview = overview;
@@ -31,28 +31,24 @@ SCREEN_LOADERS['screen-C03'] = async () => {
   const totalCa = active.reduce((s, k) => s + k.tongSoCa, 0);
   const fullCa = active.reduce((s, k) => s + k.soCaDaDu, 0);
 
-  setText('c03Progress', `${done} / ${active.length} Khoa`);
+  setText('c03Progress', `${done} / ${active.length}`);
   const bar = document.getElementById('c03ProgressBar');
   if (bar) bar.style.width = active.length ? `${(done / active.length) * 100}%` : '0%';
-  setText('c03FullShifts', `${fullCa} / ${totalCa} ca`);
-  setText('c03FullShiftsNote', totalCa ? `Đã đủ 1 BS + 2 YT: ${((fullCa / totalCa) * 100).toFixed(1)}%` : '');
-  setText('c03TotalShifts', `${totalCa} Ca trực`);
-  setText('c03TotalShiftsNote', `${active.length} chuyên khoa có mở ca`);
+  setText('c03FullShifts', `${fullCa} / ${totalCa}`);
+  setText('c03FullShiftsNote', totalCa ? `${Math.round((fullCa / totalCa) * 100)}% hoàn thành` : '');
+  setText('c03TotalShifts', `${totalCa}`);
+  setText('c03TotalShiftsNote', `${active.length} khoa`);
 
-  const pending = active.filter(k => !deptStatus(k).full).slice(0, 4);
+  const pending = active.filter(k => !deptStatus(k).full).slice(0, 6);
   setHtml('c03DeptList', pending.length === 0
-    ? '<div class="text-xs text-emerald-700 font-semibold p-3 bg-emerald-50 rounded-lg border border-emerald-200">Tất cả các khoa đã xếp đủ ca – có thể công bố lịch.</div>'
-    : pending.map(k => `
-      <div class="flex items-center justify-between p-3 rounded-lg ${k.soCaDaDu ? 'bg-amber-50/60 border border-amber-200/60' : 'bg-rose-50/60 border border-rose-200/60'}">
-        <div class="flex items-center gap-3">
-          <span class="font-bold text-xs px-2 py-0.5 rounded ${k.soCaDaDu ? 'text-amber-900 bg-amber-100' : 'text-rose-900 bg-rose-100'}">${escapeHtml(k.maKhoa)}</span>
-          <div>
-            <div class="text-xs font-semibold text-slate-800">${escapeHtml(k.tenKhoa)} (${k.soBacSi} BS, ${k.soYTa} YT)</div>
-            <div class="text-[11px] text-slate-500">${k.soCaDaDu}/${k.tongSoCa} ca đã đủ • Còn thiếu ${k.tongSoCa - k.soCaDaDu} ca</div>
-          </div>
-        </div>
-        <button onclick="pcSelectDept(${k.khoaId})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">${k.soCaDaDu ? 'Tiếp tục phân ca' : 'Bắt đầu phân ca'}</button>
-      </div>`).join(''));
+    ? '<div class="empty">Tất cả các khoa đã xếp đủ.</div>'
+    : `<table class="table"><tbody>${pending.map(k => `
+        <tr>
+          <td><div class="cell-strong">${escapeHtml(k.tenKhoa)}</div><div class="cell-sub">${escapeHtml(k.maKhoa)}</div></td>
+          <td style="width:40%">${progressBar(k.soCaDaDu, k.tongSoCa)}</td>
+          <td class="num text-right cell-sub">${k.soCaDaDu}/${k.tongSoCa}</td>
+          <td class="text-right"><button onclick="pcSelectDept(${k.khoaId})" class="btn btn-secondary btn-sm">Xếp ca</button></td>
+        </tr>`).join('')}</tbody></table>`);
 };
 
 // ==========================================
@@ -64,16 +60,67 @@ async function loadSchedulingOverview() {
   const sc = STATE.scheduling;
   sc.week = sc.week || pickSchedulingWeek();
   const w = sc.week;
+  setHtml('pcWeekSelect', weekOptionsHtml(w?.id));
+  setSegmented(['pcFilterAll', 'pcFilterIncomplete', 'pcFilterComplete'],
+    { ALL: 'pcFilterAll', INCOMPLETE: 'pcFilterIncomplete', COMPLETE: 'pcFilterComplete' }[sc.deptFilter || 'ALL']);
   if (!w) {
-    setTableMessage('pcDeptTableBody', 7, 'Chưa có tuần làm việc nào.');
+    setTableMessage('pcDeptTableBody', 6, 'Chưa có tuần làm việc nào.');
     return;
   }
   setText('pcWeekName', w.ten);
-  setText('pcWeekRange', `${weekRange(w)} • ${TRANG_THAI_TUAN[w.trangThai] || w.trangThai}`);
-  setTableMessage('pcDeptTableBody', 7, 'Đang tải tiến độ xếp lịch...');
+  setText('pcWeekRange', weekRange(w));
+  setTableMessage('pcDeptTableBody', 6, 'Đang tải…');
 
   sc.overview = await MedcareAPI.getScheduleOverview(w.id);
   renderDeptListTable();
+}
+
+function pcChangeWeek(weekId) {
+  const found = findWeek(weekId);
+  if (!found) return;
+  STATE.scheduling.week = found;
+  if (STATE.currentScreen === 'screen-PC02') {
+    setHtml('pc2WeekSelect', weekOptionsHtml(found.id));
+    reloadDeptGrid().catch(handleError);
+  } else {
+    loadSchedulingOverview().catch(handleError);
+  }
+}
+
+function pcQuickSwitchWeek(mode) {
+  const target = mode === 'next' ? getNextWeek() : getCurrentWeek();
+  if (!target) {
+    showToast(mode === 'next' ? 'Không tìm thấy tuần kế tiếp' : 'Không tìm thấy tuần hiện tại', false);
+    return;
+  }
+  pcChangeWeek(target.id);
+}
+
+function pcSetDeptFilter(mode) {
+  STATE.scheduling.deptFilter = mode || 'ALL';
+  setSegmented(['pcFilterAll', 'pcFilterIncomplete', 'pcFilterComplete'],
+    { ALL: 'pcFilterAll', INCOMPLETE: 'pcFilterIncomplete', COMPLETE: 'pcFilterComplete' }[STATE.scheduling.deptFilter]);
+  renderDeptListTable();
+}
+
+function pcJumpToFirstIncompleteDept() {
+  const sc = STATE.scheduling;
+  const target = (sc.overview || []).find(k => k.tongSoCa > 0 && k.soCaDaDu < k.tongSoCa);
+  if (!target) {
+    showToast('Tất cả các khoa đã xếp đủ');
+    return;
+  }
+  pcSelectDept(target.khoaId);
+}
+
+/** Chuyển sang khoa kế tiếp ngay trên màn hình PC02. */
+function pcNextDepartment() {
+  const sc = STATE.scheduling;
+  const list = (sc.overview || []).filter(k => k.tongSoCa > 0);
+  if (!list.length) return;
+  const idx = list.findIndex(k => k.khoaId === sc.deptId);
+  const next = list[(idx + 1) % list.length];
+  if (next) pcSelectDept(next.khoaId);
 }
 
 function renderDeptListTable() {
@@ -85,43 +132,42 @@ function renderDeptListTable() {
   const published = active.length > 0 && active.every(k => k.trangThaiBang === 'DA_CONG_BO');
   const allFull = active.length > 0 && active.every(k => deptStatus(k).full);
 
-  tbody.innerHTML = sc.overview.map(k => {
+  const filterMode = sc.deptFilter || 'ALL';
+  const filteredList = sc.overview.filter(k => {
     const st = deptStatus(k);
-    return `<tr class="hover:bg-slate-50/80 transition">
-      <td class="py-3.5 px-4 font-mono font-bold text-sky-700">${escapeHtml(k.maKhoa)}</td>
-      <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(k.tenKhoa)}</td>
-      <td class="py-3.5 px-4 text-center">${k.soBacSi}</td>
-      <td class="py-3.5 px-4 text-center">${k.soYTa}</td>
-      <td class="py-3.5 px-4 text-center font-bold">${k.tongSoCa}</td>
-      <td class="py-3.5 px-4">
-        <div class="flex items-center gap-2">
-          <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div class="h-1.5 rounded-full ${st.full ? 'bg-emerald-500' : 'bg-amber-500'}" style="width:${k.tongSoCa ? (k.soCaDaDu / k.tongSoCa) * 100 : 0}%"></div>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded ${st.cls}">${st.text}</span>
+    if (filterMode === 'INCOMPLETE') return k.tongSoCa > 0 && !st.full;
+    if (filterMode === 'COMPLETE') return k.tongSoCa > 0 && st.full;
+    return true;
+  });
+
+  tbody.innerHTML = filteredList.map(k => {
+    const st = deptStatus(k);
+    return `<tr>
+      <td><div class="cell-strong">${escapeHtml(k.tenKhoa)}</div><div class="cell-sub">${escapeHtml(k.maKhoa)}</div></td>
+      <td class="text-center num">${k.soBacSi}</td>
+      <td class="text-center num">${k.soYTa}</td>
+      <td>
+        <div class="flex items-center gap-3">
+          <div class="flex-1">${progressBar(k.soCaDaDu, k.tongSoCa)}</div>
+          <span class="num cell-sub" style="min-width:44px">${k.soCaDaDu}/${k.tongSoCa}</span>
         </div>
       </td>
-      <td class="py-3.5 px-4 text-center">
-        ${k.tongSoCa > 0
-          ? `<button onclick="pcSelectDept(${k.khoaId})" class="px-3 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded text-xs font-semibold">${k.trangThaiBang === 'DA_CONG_BO' ? 'Xem lịch' : 'Xếp ca'} &rarr;</button>`
-          : '<span class="text-slate-300 text-xs">—</span>'}
+      <td>${badge(st.text, st.tone)}</td>
+      <td class="text-right">
+        ${k.tongSoCa > 0 ? `<button onclick="pcSelectDept(${k.khoaId})" class="btn btn-secondary btn-sm">${k.trangThaiBang === 'DA_CONG_BO' ? 'Xem' : 'Xếp ca'}</button>` : ''}
       </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="py-6 text-center text-slate-400 italic">Chưa có khoa nào.</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="empty">Không có khoa phù hợp.</td></tr>';
 
   const doneCount = active.filter(k => deptStatus(k).full).length;
-  setText('pcOverallProgress', published ? 'Đã công bố toàn viện' : `${doneCount} / ${active.length} khoa đã đủ`);
+  setText('pcOverallProgress', published
+    ? `${sc.week.ten} · Đã công bố`
+    : `${sc.week.ten} · ${doneCount}/${active.length} khoa đã xếp đủ`);
 
   const publishBtn = document.getElementById('pcPublishBtn');
-  if (publishBtn) {
-    const enabled = allFull && !published;
-    publishBtn.disabled = !enabled;
-    publishBtn.className = enabled
-      ? 'px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5 cursor-pointer transition'
-      : 'px-5 py-2 bg-slate-300 text-slate-500 cursor-not-allowed rounded-lg text-xs font-bold transition flex items-center gap-1.5';
-  }
+  if (publishBtn) publishBtn.disabled = !(allFull && !published);
   const totalCa = active.reduce((s, k) => s + k.tongSoCa, 0);
-  setHtml('pcPublishSummary', `Toàn bộ <strong>${active.length} chuyên khoa</strong> với tổng số <strong>${totalCa} ca trực</strong> của <strong>${escapeHtml(sc.week.ten)}</strong> đã được phân bổ đủ nhân sự theo định mức (1 BS chính + 2 Y tá).`);
+  setHtml('pcPublishSummary', `${active.length} khoa, ${totalCa} ca trực của <strong class="text-ink">${escapeHtml(sc.week.ten)}</strong>. Sau khi công bố, lịch sẽ bị khóa chỉnh sửa.`);
 }
 
 async function pcConfirmPublish() {
@@ -129,7 +175,7 @@ async function pcConfirmPublish() {
   const sc = STATE.scheduling;
   try {
     const res = await MedcareAPI.publishWeek(sc.week.id);
-    showToast(res.message || 'Đã công bố lịch làm việc');
+    showToast(res.message || 'Đã công bố lịch');
     STATE.weeks = await MedcareAPI.getWeeks();
     sc.week = findWeek(sc.week.id);
     await loadSchedulingOverview();
@@ -142,9 +188,13 @@ async function pcConfirmPublish() {
 // LƯỚI PHÂN CA CỦA KHOA (PC02)
 // ==========================================
 function pcSelectDept(khoaId) {
-  STATE.scheduling.deptId = khoaId;
+  STATE.scheduling.deptId = Number(khoaId);
   STATE.scheduling.week = STATE.scheduling.week || pickSchedulingWeek();
-  navigateTo('screen-PC02');
+  if (STATE.currentScreen === 'screen-PC02') {
+    reloadDeptGrid().catch(handleError);
+  } else {
+    navigateTo('screen-PC02');
+  }
 }
 
 SCREEN_LOADERS['screen-PC02'] = async () => {
@@ -153,32 +203,47 @@ SCREEN_LOADERS['screen-PC02'] = async () => {
     navigateTo('screen-PC01');
     return;
   }
-  setTableMessage('pcGridBody', 8, 'Đang tải lưới phân ca...');
+  setHtml('pc2WeekSelect', weekOptionsHtml(sc.week?.id));
+  setTableMessage('pcGridBody', 8, 'Đang tải…');
   await reloadDeptGrid();
 };
 
 async function reloadDeptGrid() {
   const sc = STATE.scheduling;
-  sc.lich = await MedcareAPI.getDepartmentSchedule(sc.deptId, sc.week.id);
+  const [lich, overview] = await Promise.all([
+    MedcareAPI.getDepartmentSchedule(sc.deptId, sc.week.id),
+    MedcareAPI.getScheduleOverview(sc.week.id).catch(() => sc.overview || [])
+  ]);
+  sc.lich = lich;
+  sc.overview = overview;
+  renderPcDeptQuickTabs();
   renderDeptGridSlots();
 }
 
+/** Ô chọn khoa (thay cho dải tab) để chuyển nhanh giữa các khoa. */
+function renderPcDeptQuickTabs() {
+  const sc = STATE.scheduling;
+  const el = document.getElementById('pcDeptQuickTabs');
+  if (!el) return;
+  const list = (sc.overview || []).filter(k => k.tongSoCa > 0);
+  el.innerHTML = list.length
+    ? `<select class="select select-sm" onchange="pcSelectDept(this.value)">${list.map(k =>
+        `<option value="${k.khoaId}" ${k.khoaId === sc.deptId ? 'selected' : ''}>${escapeHtml(k.tenKhoa)} · ${k.soCaDaDu}/${k.tongSoCa}</option>`).join('')}</select>`
+    : '';
+}
+
 function slotHtml(ca, slot, vaiTro, label, locked) {
-  const color = vaiTro === 'BAC_SI_CHINH' ? 'text-blue-700 bg-blue-100/70' : 'text-teal-700 bg-teal-100/70';
   let body;
   if (slot) {
-    body = `<div class="truncate font-semibold text-slate-800 flex-1 text-[10px] ml-1" title="${escapeHtml(slot.hoTen)} (${escapeHtml(slot.maNhanSu)})${slot.dieuDongNgoaiDangKy ? ' – điều động ngoài đăng ký' : ''}">
-        ${escapeHtml(slot.hoTen)}${slot.dieuDongNgoaiDangKy ? ' <i class="fa-solid fa-bolt text-amber-500" title="Điều động ngoài đăng ký"></i>' : ''}
-      </div>
-      ${locked ? '' : `<button onclick="pcClearSlot(${slot.phanCongId})" class="text-slate-300 hover:text-rose-600 text-[10px]" title="Hủy phân công">&times;</button>`}`;
+    body = `<span class="slot-name" title="${escapeHtml(slot.hoTen)} · ${escapeHtml(slot.maNhanSu)}${slot.dieuDongNgoaiDangKy ? ' · điều động ngoài đăng ký' : ''}">${escapeHtml(slot.hoTen)}</span>
+      ${slot.dieuDongNgoaiDangKy ? `<span title="Điều động ngoài đăng ký" style="color:var(--warning)">${ic('zap', 'text-[12px]')}</span>` : ''}
+      ${locked ? '' : `<button onclick="pcClearSlot(${slot.phanCongId})" class="slot-remove" title="Hủy phân công">${ic('x', 'text-[13px]')}</button>`}`;
   } else if (locked) {
-    body = '<span class="text-[10px] text-rose-400 italic ml-1">Trống</span>';
+    body = '<span class="slot-name" style="color:var(--muted-soft);font-weight:400">Trống</span>';
   } else {
-    body = `<button onclick="pcOpenSlotPicker(${ca.id}, '${vaiTro}')" class="w-full text-left py-0.5 px-1 bg-slate-50 hover:bg-sky-50 text-slate-400 hover:text-sky-600 border border-dashed rounded text-[10px]">+ Chọn</button>`;
+    body = `<button onclick="pcOpenSlotPicker(${ca.id}, '${vaiTro}')" class="slot-add">Chọn</button>`;
   }
-  return `<div class="flex items-center justify-between gap-1">
-    <span class="text-[9px] font-bold ${color} px-1 rounded shrink-0">${label}</span>${body}
-  </div>`;
+  return `<div class="slot-row"><span class="slot-role">${label}</span>${body}</div>`;
 }
 
 function renderDeptGridSlots() {
@@ -188,34 +253,89 @@ function renderDeptGridSlots() {
   if (!tbody || !lich) return;
 
   const locked = lich.trangThaiBang === 'DA_CONG_BO';
-  setText('pcCurrentDeptName', `${lich.tenKhoa} (${lich.maKhoa})`);
+  const hasIncomplete = lich.soCaDaDu < lich.tongSoCa;
+  setText('pcCurrentDeptName', lich.tenKhoa);
   setText('pcDeptWeek', lich.tenTuan);
-  setText('pcDeptSlotProgress', `Tiến độ: ${lich.soCaDaDu} / ${lich.tongSoCa} ca đã đủ${locked ? ' • ĐÃ CÔNG BỐ (khóa chỉnh sửa)' : ''}`);
+  setText('pcDeptSlotProgress', locked ? 'Đã công bố' : `${lich.soCaDaDu}/${lich.tongSoCa} ca đã đủ`);
+
+  const autoBtn = document.getElementById('pcAutoFillDeptBtn');
+  if (autoBtn) autoBtn.classList.toggle('hidden', locked || !hasIncomplete);
 
   const shifts = lich.danhSachCa.map(x => x.ca);
   const { days, caTypes } = buildAxes(shifts);
-  setHtml('pcGridHead', dayHeaderHtml(days, 'Ca trực \\ Ngày'));
+  setHtml('pcGridHead', shifts.length ? dayHeaderHtml(days, 'Ca') : '');
 
   if (!shifts.length) {
-    setTableMessage('pcGridBody', 8, 'Khoa chưa mở ca trực nào trong tuần.');
+    setTableMessage('pcGridBody', 8, 'Khoa chưa mở ca trực trong tuần.');
     return;
   }
 
   tbody.innerHTML = caTypes.map(c => {
     const cells = days.map(d => {
       const item = lich.danhSachCa.find(x => x.ca.ngayId === d.ngayId && x.ca.caLamViecId === c.caLamViecId);
-      if (!item) return '<td class="py-2 px-1.5 text-center text-slate-300">—</td>';
+      if (!item) return '<td style="color:var(--muted-soft)">—</td>';
       const full = item.bacSiChinh && item.yTa1 && item.yTa2;
-      return `<td class="py-2 px-1.5 align-top border-r border-slate-100 text-left">
-        <div class="p-1.5 rounded-lg border text-[11px] space-y-1.5 ${full ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200'}">
-          ${slotHtml(item.ca, item.bacSiChinh, 'BAC_SI_CHINH', 'BS chính', locked)}
-          ${slotHtml(item.ca, item.yTa1, 'Y_TA_1', 'Y tá 1', locked)}
-          ${slotHtml(item.ca, item.yTa2, 'Y_TA_2', 'Y tá 2', locked)}
+      return `<td style="vertical-align:top;padding:8px 4px">
+        <div class="slot-card ${full ? 'is-full' : locked ? '' : 'is-missing'}">
+          ${slotHtml(item.ca, item.bacSiChinh, 'BAC_SI_CHINH', 'BS', locked)}
+          ${slotHtml(item.ca, item.yTa1, 'Y_TA_1', 'YT1', locked)}
+          ${slotHtml(item.ca, item.yTa2, 'Y_TA_2', 'YT2', locked)}
         </div>
       </td>`;
     }).join('');
-    return `<tr class="hover:bg-slate-50/40 transition">${caTypeCellHtml(c)}${cells}</tr>`;
+    return `<tr>${caTypeCellHtml(c)}${cells}</tr>`;
   }).join('');
+}
+
+/** Tự động điền toàn bộ vị trí còn trống trong khoa hiện tại bằng ứng viên hợp lệ. */
+async function pcAutoFillEmptySlots() {
+  const sc = STATE.scheduling;
+  const lich = sc.lich;
+  if (!lich || lich.trangThaiBang === 'DA_CONG_BO') return;
+
+  const missingSlots = [];
+  for (const item of lich.danhSachCa) {
+    if (!item.bacSiChinh) missingSlots.push({ caId: item.ca.id, vaiTro: 'BAC_SI_CHINH' });
+    if (!item.yTa1) missingSlots.push({ caId: item.ca.id, vaiTro: 'Y_TA_1' });
+    if (!item.yTa2) missingSlots.push({ caId: item.ca.id, vaiTro: 'Y_TA_2' });
+  }
+  if (!missingSlots.length) {
+    showToast('Khoa đã xếp đủ');
+    return;
+  }
+
+  const autoBtn = document.getElementById('pcAutoFillDeptBtn');
+  if (autoBtn) autoBtn.disabled = true;
+
+  let assignedCount = 0;
+  try {
+    for (const slot of missingSlots) {
+      const candidates = await MedcareAPI.getCandidates(slot.caId, slot.vaiTro);
+      const valid = candidates.filter(c => !c.daCoTrongCa && c.soCaTrongNgay < c.soCaToiDaMoiNgay);
+      valid.sort((a, b) =>
+        (b.daDangKy ? 1 : 0) - (a.daDangKy ? 1 : 0) ||
+        (b.cungKhoa ? 1 : 0) - (a.cungKhoa ? 1 : 0) ||
+        a.soCaTrongNgay - b.soCaTrongNgay);
+      const chosen = valid[0];
+      if (chosen) {
+        const dieuDong = !chosen.daDangKy;
+        await MedcareAPI.assignStaff({
+          caTrucKhoaId: slot.caId,
+          nhanSuId: chosen.nhanSuId,
+          vaiTro: slot.vaiTro,
+          dieuDongNgoaiDangKy: dieuDong,
+          ghiChu: dieuDong ? 'Tự động phân bổ bởi Quản lý' : null
+        });
+        assignedCount++;
+      }
+    }
+    await reloadDeptGrid();
+    showToast(`Đã điền ${assignedCount}/${missingSlots.length} vị trí`);
+  } catch (err) {
+    handleError(err);
+  } finally {
+    if (autoBtn) autoBtn.disabled = false;
+  }
 }
 
 async function pcClearSlot(phanCongId) {
@@ -235,19 +355,31 @@ async function pcOpenSlotPicker(caId, vaiTro) {
   const sc = STATE.scheduling;
   const item = sc.lich.danhSachCa.find(x => x.ca.id === caId);
   sc.picking = { ca: item.ca, vaiTro };
+  sc.candidateFilter = 'ALL';
   const ca = item.ca;
-  setText('pcModalTitle', `Chọn ${VAI_TRO_LABEL[vaiTro]} cho ca ${ca.tenCa} (${THU_LABEL[ca.thu] || ''})`);
-  setText('pcModalSubtitle', `${THU_LABEL[ca.thu] || ''} (${fmtDate(ca.ngay)}) – Ca ${ca.tenCa} (${fmtTime(ca.gioBatDau)}–${fmtTime(ca.gioKetThuc)}) • Vị trí: ${VAI_TRO_LABEL[vaiTro]}`);
+  setText('pcModalTitle', `Chọn ${VAI_TRO_LABEL[vaiTro].toLowerCase()}`);
+  setText('pcModalSubtitle', `${THU_LABEL[ca.thu] || ''} ${fmtDate(ca.ngay)} · Ca ${ca.tenCa} ${fmtTime(ca.gioBatDau)}–${fmtTime(ca.gioKetThuc)}`);
   const search = document.getElementById('pcStaffSearch');
   if (search) search.value = '';
-  setTableMessage('pcStaffListBody', 6, 'Đang tải danh sách nhân sự...');
+  pcSetCandidateFilter('ALL', true);
+  setTableMessage('pcStaffListBody', 4, 'Đang tải…');
   openModal('modal-PC03');
 
   try {
     sc.candidates = await MedcareAPI.getCandidates(caId, vaiTro);
     pcRenderStaffCandidates('');
   } catch (err) {
-    setTableMessage('pcStaffListBody', 6, err.message, true);
+    setTableMessage('pcStaffListBody', 4, err.message, true);
+  }
+}
+
+function pcSetCandidateFilter(mode, skipRender) {
+  STATE.scheduling.candidateFilter = mode || 'ALL';
+  setSegmented(['pcCandFilterAll', 'pcCandFilterReg', 'pcCandFilterDept', 'pcCandFilterAvail'],
+    { ALL: 'pcCandFilterAll', REGISTERED: 'pcCandFilterReg', SAME_DEPT: 'pcCandFilterDept', AVAILABLE: 'pcCandFilterAvail' }[STATE.scheduling.candidateFilter]);
+  if (!skipRender) {
+    const q = document.getElementById('pcStaffSearch')?.value || '';
+    pcFilterStaffList(q);
   }
 }
 
@@ -259,39 +391,38 @@ function pcRenderStaffCandidates(query) {
   const sc = STATE.scheduling;
   const tbody = document.getElementById('pcStaffListBody');
   if (!tbody) return;
-  const list = sc.candidates.filter(c => !query
-    || c.hoTen.toLowerCase().includes(query)
-    || c.maNhanSu.toLowerCase().includes(query)
-    || (c.tenKhoa || '').toLowerCase().includes(query));
+  const mode = sc.candidateFilter || 'ALL';
+  const list = (sc.candidates || []).filter(c => {
+    if (mode === 'REGISTERED' && !c.daDangKy) return false;
+    if (mode === 'SAME_DEPT' && !c.cungKhoa) return false;
+    if (mode === 'AVAILABLE' && (c.daCoTrongCa || c.soCaTrongNgay >= c.soCaToiDaMoiNgay)) return false;
+    return !query
+      || c.hoTen.toLowerCase().includes(query)
+      || c.maNhanSu.toLowerCase().includes(query)
+      || (c.tenKhoa || '').toLowerCase().includes(query);
+  });
 
   if (!list.length) {
-    setTableMessage('pcStaffListBody', 6, 'Không tìm thấy nhân sự phù hợp');
+    setTableMessage('pcStaffListBody', 4, 'Không có nhân sự phù hợp.');
     return;
   }
 
-  tbody.innerHTML = list.map((c, i) => {
+  tbody.innerHTML = list.map(c => {
     const maxed = c.soCaTrongNgay >= c.soCaToiDaMoiNgay;
     const blocked = maxed || c.daCoTrongCa;
-    const reason = c.daCoTrongCa ? 'Đã có trong ca' : maxed ? `Đủ ${c.soCaToiDaMoiNgay} ca/ngày` : '';
+    const reason = c.daCoTrongCa ? 'Đã trong ca' : maxed ? 'Đủ ca' : '';
     const wish = c.daDangKy
-      ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i>Đã đăng ký ca này</span>'
-      : `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${c.cungKhoa ? 'Chưa đăng ký' : 'Khác khoa'} (cần điều động)</span>`;
-    return `<tr class="hover:bg-slate-50 transition border-b border-slate-100 text-xs">
-      <td class="py-2.5 px-3 text-slate-500 font-medium">${i + 1}</td>
-      <td class="py-2.5 px-3 font-mono font-bold text-sky-700">${escapeHtml(c.maNhanSu)}</td>
-      <td class="py-2.5 px-3">
-        <div class="font-semibold text-slate-800">${escapeHtml(c.hoTen)}</div>
-        <div class="text-[10px] text-slate-400">${escapeHtml(c.hocVi || '')} • ${escapeHtml(c.tenKhoa || '')}</div>
+      ? badge('Đã đăng ký', 'success')
+      : badge(c.cungKhoa ? 'Chưa đăng ký' : 'Khác khoa', 'warning');
+    return `<tr>
+      <td>
+        <div class="cell-strong">${escapeHtml(c.hoTen)}</div>
+        <div class="cell-sub">${escapeHtml(c.maNhanSu)}${c.tenKhoa ? ' · ' + escapeHtml(c.tenKhoa) : ''}</div>
       </td>
-      <td class="py-2.5 px-3 text-center">
-        <span class="text-xs font-bold ${maxed ? 'text-rose-600 bg-rose-50 border border-rose-200' : 'text-slate-600 bg-slate-100'} px-2 py-0.5 rounded-full">${c.soCaTrongNgay} / ${c.soCaToiDaMoiNgay} ca</span>
-      </td>
-      <td class="py-2.5 px-3">${wish}</td>
-      <td class="py-2.5 px-3 text-center">
-        <button onclick="pcAssignCandidate(${c.nhanSuId})" ${blocked ? 'disabled' : ''}
-          class="px-3 py-1 rounded text-xs font-bold transition ${blocked ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm'}">
-          ${blocked ? reason : 'Chọn gán'}
-        </button>
+      <td class="text-center num ${maxed ? '' : 'cell-sub'}" ${maxed ? 'style="color:var(--danger)"' : ''}>${c.soCaTrongNgay}/${c.soCaToiDaMoiNgay}</td>
+      <td>${wish}</td>
+      <td class="text-right">
+        <button onclick="pcAssignCandidate(${c.nhanSuId})" ${blocked ? 'disabled' : ''} class="btn ${blocked ? 'btn-ghost' : 'btn-primary'} btn-sm">${blocked ? reason : 'Chọn'}</button>
       </td>
     </tr>`;
   }).join('');
@@ -304,8 +435,8 @@ async function pcAssignCandidate(nhanSuId) {
 
   if (!cand.daDangKy) {
     sc.pendingCandidate = cand;
-    setText('pcDispatchStaffName', `${cand.hoTen} (${cand.maNhanSu})`);
-    setText('pcDispatchReason', cand.cungKhoa ? 'KHÔNG ĐĂNG KÝ' : `thuộc ${cand.tenKhoa} và KHÔNG ĐĂNG KÝ`);
+    setText('pcDispatchStaffName', cand.hoTen);
+    setText('pcDispatchReason', cand.cungKhoa ? 'chưa đăng ký' : `thuộc ${cand.tenKhoa} và chưa đăng ký`);
     openModal('modal-PC04');
     return;
   }
@@ -326,10 +457,10 @@ async function doAssign(cand, dieuDong) {
       nhanSuId: cand.nhanSuId,
       vaiTro: sc.picking.vaiTro,
       dieuDongNgoaiDangKy: dieuDong,
-      ghiChu: dieuDong ? 'Điều động ngoài đăng ký có xác nhận quản lý' : null
+      ghiChu: dieuDong ? 'Điều động ngoài đăng ký' : null
     });
     closeModal('modal-PC03');
-    showToast(res.message || `Đã xếp ${cand.hoTen} vào ca trực`);
+    showToast(res.message || `Đã xếp ${cand.hoTen}`);
     await reloadDeptGrid();
   } catch (err) {
     handleError(err);

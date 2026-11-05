@@ -29,15 +29,19 @@
 
     create table tbl_bang_phan_cong (
         id bigserial not null,
-        khoa_id bigint not null,
-        ngay_cong_bo timestamp(6),
-        ngay_lap timestamp(6) not null,
-        nguoi_lap_id bigint not null,
-        tuan_lam_viec_id bigint not null,
-        trang_thai varchar(30) not null check (trang_thai in ('BAN_NHAP','DANG_XEP','DA_DU','DA_CONG_BO')),
         ma_bang varchar(50) not null,
-        primary key (id),
-        unique (khoa_id, tuan_lam_viec_id)
+        ngay_lap timestamp(6) not null,
+        ngay_cong_bo timestamp(6),
+        trang_thai varchar(30) not null check (trang_thai in ('BAN_NHAP','DANG_XEP','DA_DU','DA_CONG_BO')),
+        khoa_id bigint not null,
+        tuan_lam_viec_id bigint not null,
+        nguoi_lap_id bigint,
+        ca_truc_khoa_id bigint,
+        nhan_su_id bigint,
+        vai_tro varchar(30) check (vai_tro in ('BAC_SI_CHINH','Y_TA_1','Y_TA_2')),
+        ghi_chu TEXT,
+        dieu_dong_ngoai_dang_ky boolean default false not null,
+        primary key (id)
     );
 
     create table tbl_ca_lam_viec (
@@ -63,11 +67,10 @@
     );
 
     create table tbl_cham_cong (
-        bang_phan_cong_id bigint,
+        bang_phan_cong_id bigint not null,
         gio_check_in timestamp(6),
         gio_check_out timestamp(6),
         id bigserial not null,
-        phan_cong_ca_id bigint unique,
         phieu_thanh_toan_id bigint,
         trang_thai varchar(30) not null check (trang_thai in ('DUNG_GIO','DI_MUON','VE_SOM','VANG_MAT','LOI_THIET_BI')),
         ghi_chu TEXT,
@@ -142,18 +145,6 @@
         primary key (id)
     );
 
-    create table tbl_phan_cong_ca (
-        dieu_dong_ngoai_dang_ky boolean not null,
-        bang_phan_cong_id bigint not null,
-        ca_truc_khoa_id bigint not null,
-        id bigserial not null,
-        nhan_su_id bigint not null,
-        vai_tro varchar(30) not null check (vai_tro in ('BAC_SI_CHINH','Y_TA_1','Y_TA_2')),
-        ghi_chu TEXT,
-        primary key (id),
-        unique (ca_truc_khoa_id, vai_tro),
-        unique (ca_truc_khoa_id, nhan_su_id)
-    );
 
     create table tbl_phieu_dang_ky (
         tong_so_ca integer not null,
@@ -257,7 +248,6 @@
         ngay_xu_ly timestamp(6),
         nguoi_xu_ly_id bigint,
         nhan_su_id bigint,
-        phan_cong_ca_id bigint,
         phieu_thanh_toan_id bigint,
         trang_thai varchar(50) not null,
         ds_minh_chung TEXT,
@@ -316,11 +306,6 @@
        references tbl_bang_phan_cong;
 
     alter table if exists tbl_cham_cong 
-       add constraint FK5nsqrrx6pl09yu023ql5vj9g4 
-       foreign key (phan_cong_ca_id) 
-       references tbl_phan_cong_ca;
-
-    alter table if exists tbl_cham_cong 
        add constraint FKbr9wctauff6qaobqcc3xy9lmo 
        foreign key (phieu_thanh_toan_id) 
        references tbl_phieu_thanh_toan;
@@ -364,21 +349,6 @@
        add constraint FKkwxysm4ydbso3ybes62epfifu 
        foreign key (id) 
        references tbl_thanh_vien;
-
-    alter table if exists tbl_phan_cong_ca 
-       add constraint FKj2g766x7qqs48b7t20c3o26nm 
-       foreign key (bang_phan_cong_id) 
-       references tbl_bang_phan_cong;
-
-    alter table if exists tbl_phan_cong_ca 
-       add constraint FKqxn0sy8oyqt1b80rcxj6gjy05 
-       foreign key (ca_truc_khoa_id) 
-       references tbl_ca_truc_khoa;
-
-    alter table if exists tbl_phan_cong_ca 
-       add constraint FKqxcwdn9837qr1l9bij1ga6sv3 
-       foreign key (nhan_su_id) 
-       references tbl_nhan_suyte;
 
     alter table if exists tbl_phieu_dang_ky 
        add constraint FKmlsmclw8hp35k5pw4p2yywjxu 
@@ -444,11 +414,6 @@
        add constraint FKo8ulwqntkm0sdutgywgs2lkx3 
        foreign key (nhan_su_id) 
        references tbl_nhan_suyte;
-
-    alter table if exists tbl_yeu_cau_khieu_nai 
-       add constraint FK8nnhgvg4ky971i0a785px3ylh 
-       foreign key (phan_cong_ca_id) 
-       references tbl_phan_cong_ca;
 
     alter table if exists tbl_yeu_cau_khieu_nai 
        add constraint FKp28au57n8rpiyf3dc6l8mlme0 

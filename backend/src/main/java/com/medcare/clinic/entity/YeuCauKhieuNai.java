@@ -3,9 +3,14 @@ package com.medcare.clinic.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Yêu cầu khiếu nại của nhân sự y tế về kết quả chấm công / tính lương.
+ * Đã gộp toàn bộ nội dung của Biên bản điều chỉnh theo thiết kế cập nhật.
+ */
 @Entity
 @Table(name = "tblYeuCauKhieuNai")
 @Getter
@@ -15,6 +20,7 @@ import java.time.LocalDateTime;
 @Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class YeuCauKhieuNai {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,6 +45,7 @@ public class YeuCauKhieuNai {
     @Column(nullable = false, length = 50)
     private String trangThai; // CHO_XU_LY, DA_XU_LY, TU_CHOI
 
+    // Các trường của Biên bản điều chỉnh được gộp trực tiếp vào đây
     @Builder.Default
     private int soCaChinhDieuChinh = 0;
 
@@ -77,10 +84,6 @@ public class YeuCauKhieuNai {
     private BangPhanCong bangPhanCong;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "phanCongCaId")
-    private PhanCongCa phanCongCa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chamCongId")
     private ChamCong chamCong;
 
@@ -92,4 +95,3 @@ public class YeuCauKhieuNai {
     @JoinColumn(name = "phieuThanhToanId")
     private PhieuThanhToan phieuThanhToan;
 }
-

@@ -20,21 +20,26 @@ spring:
       idle-timeout: 30000
       connection-timeout: 20000
 
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    clean-disabled: false
+
   sql:
     init:
-      # Lược đồ do Hibernate quản lý; db/schema.sql chỉ dùng khi tạo CSDL mới bằng tay
       mode: never
 
   jpa:
     # API chỉ trả DTO được dựng trong transaction, không cần giữ session tới tầng view
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
   # Đặt biến môi trường JWT_SECRET (Base64, >= 256 bit) khi triển khai thật

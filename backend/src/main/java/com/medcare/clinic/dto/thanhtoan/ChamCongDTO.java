@@ -1,5 +1,6 @@
 package com.medcare.clinic.dto.thanhtoan;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.*;
 
 /** Một dòng trong bảng chấm công chi tiết (một ca đã được phân công). */
@@ -10,7 +11,18 @@ import lombok.*;
 @Builder
 public class ChamCongDTO {
     private Long id;
-    private Long phanCongCaId;
+    
+    @JsonAlias({"phanCongCaId", "bangPhanCongId"})
+    private Long bangPhanCongId;
+
+    public Long getPhanCongCaId() {
+        return bangPhanCongId;
+    }
+
+    public void setPhanCongCaId(Long phanCongCaId) {
+        this.bangPhanCongId = phanCongCaId;
+    }
+
     private Long nhanSuId;
     private String tenNhanSu;
     private String ngay;

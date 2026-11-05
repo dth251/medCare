@@ -26,7 +26,7 @@ public interface YeuCauKhieuNaiRepository extends JpaRepository<YeuCauKhieuNai, 
 
     List<YeuCauKhieuNai> findAllByOrderByNgayGuiDesc();
 
-    List<YeuCauKhieuNai> findByPhanCongCaId(Long phanCongCaId);
+    List<YeuCauKhieuNai> findByBangPhanCongId(Long bangPhanCongId);
 
-    boolean existsByPhanCongCaIdAndTrangThai(Long phanCongCaId, String trangThai);
+    boolean existsByBangPhanCongIdAndTrangThai(Long bangPhanCongId, String trangThai);
 }

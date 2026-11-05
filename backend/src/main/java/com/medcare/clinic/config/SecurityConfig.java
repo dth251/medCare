@@ -68,11 +68,11 @@ public class SecurityConfig {
                         writeJson(res, HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền thực hiện chức năng này")))
             .authorizeHttpRequests(auth -> auth
                 // Tài nguyên tĩnh của giao diện
-                .requestMatchers("/", "/index.html", "/favicon.ico", "/*.html", "/css/**", "/js/**",
+                .requestMatchers("/", "/index.html", "/favicon.ico", "/*.html", "/css/**", "/js/**", "/img/**",
                         "/dangky/**", "/phancong/**", "/thanhtoan/**", "/trangchu/**", "/error").permitAll()
 
                 // Xác thực
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/dang-nhap").permitAll()
                 .requestMatchers("/api/auth/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/tuan/**").authenticated()
 

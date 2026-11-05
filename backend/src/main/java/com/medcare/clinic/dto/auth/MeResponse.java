@@ -1,6 +1,7 @@
 package com.medcare.clinic.dto.auth;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /** Hồ sơ người dùng đang đăng nhập (không bao giờ chứa mật khẩu). */
@@ -19,5 +20,9 @@ public record MeResponse(
         BigDecimal donGiaCa,
         String soTaiKhoan,
         String tenNganHang,
-        String chuTaiKhoan
+        String chuTaiKhoan,
+        String email,
+        String soDienThoai,
+        LocalDate ngaySinh,
+        String diaChi
 ) {}

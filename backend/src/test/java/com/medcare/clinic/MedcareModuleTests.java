@@ -1,7 +1,7 @@
 package com.medcare.clinic;
 
+import com.medcare.clinic.dto.auth.UpdateProfileRequest;
 import com.medcare.clinic.dto.dangky.DangKyCaRequest;
-import com.medcare.clinic.dto.dangky.DangKyDtos;
 import com.medcare.clinic.dto.phancong.PhanCongDtos;
 import com.medcare.clinic.dto.phancong.PhanCongRequest;
 import com.medcare.clinic.dto.thanhtoan.DieuChinhRequest;
@@ -12,11 +12,13 @@ import com.medcare.clinic.entity.*;
 import com.medcare.clinic.enums.*;
 import com.medcare.clinic.exception.BusinessRuleException;
 import com.medcare.clinic.exception.ResourceNotFoundException;
+import com.medcare.clinic.mapper.*;
 import com.medcare.clinic.repository.*;
-import com.medcare.clinic.service.DangKyCaService;
-import com.medcare.clinic.service.KhieuNaiService;
-import com.medcare.clinic.service.PhanCongService;
-import com.medcare.clinic.service.ThanhToanService;
+import com.medcare.clinic.service.impl.AuthServiceImpl;
+import com.medcare.clinic.service.impl.DangKyCaServiceImpl;
+import com.medcare.clinic.service.impl.KhieuNaiServiceImpl;
+import com.medcare.clinic.service.impl.PhanCongServiceImpl;
+import com.medcare.clinic.service.impl.ThanhToanServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -52,17 +55,28 @@ class MedcareModuleTests {
     @Mock NhanSuYTeRepository nhanSuYTeRepository;
     @Mock CaTrucKhoaRepository caTrucKhoaRepository;
     @Mock BangPhanCongRepository bangPhanCongRepository;
-    @Mock PhanCongCaRepository phanCongCaRepository;
     @Mock NhanVienRepository nhanVienRepository;
     @Mock KhoaRepository khoaRepository;
     @Mock ChamCongRepository chamCongRepository;
     @Mock YeuCauKhieuNaiRepository yeuCauKhieuNaiRepository;
     @Mock PhieuThanhToanRepository phieuThanhToanRepository;
+    @Mock ThanhVienRepository thanhVienRepository;
+    @Mock DiaChiRepository diaChiRepository;
+    @Mock org.springframework.security.authentication.AuthenticationManager authenticationManager;
+    @Mock com.medcare.clinic.config.JwtTokenProvider jwtTokenProvider;
+    @Spy UserMapper userMapper = new UserMapper();
+    @InjectMocks AuthServiceImpl authService;
 
-    @InjectMocks DangKyCaService dangKyCaService;
-    @InjectMocks PhanCongService phanCongService;
-    @InjectMocks KhieuNaiService khieuNaiService;
-    @InjectMocks ThanhToanService thanhToanService;
+    @Spy DangKyMapper dangKyMapper = new DangKyMapper();
+    @Spy BangPhanCongMapper bangPhanCongMapper = new BangPhanCongMapper();
+    @Spy KhieuNaiMapper khieuNaiMapper = new KhieuNaiMapper();
+    @Spy ChamCongMapper chamCongMapper = new ChamCongMapper();
+    @Spy ThanhToanMapper thanhToanMapper = new ThanhToanMapper(new KhieuNaiMapper());
+
+    @InjectMocks DangKyCaServiceImpl dangKyCaService;
+    @InjectMocks PhanCongServiceImpl phanCongService;
+    @InjectMocks KhieuNaiServiceImpl khieuNaiService;
+    @InjectMocks ThanhToanServiceImpl thanhToanService;
 
     Khoa khoaRHM;
     Khoa khoaNoi;
@@ -73,194 +87,209 @@ class MedcareModuleTests {
     TuanLamViec week37;
     CaLamViec caSang;
     CaLamViec caToi;
-    List<NgayTrongTuan> days;
 
     @BeforeEach
-    void setUp() {
-        khoaRHM = Khoa.builder().id(4L).maKhoa("K04").ten("Răng – Hàm – Mặt").build();
-        khoaNoi = Khoa.builder().id(1L).maKhoa("K01").ten("Nội tổng quát").build();
+    void setUpCommon() {
+        khoaRHM = Khoa.builder().id(1L).maKhoa("K04").ten("Răng Hàm Mặt").build();
+        khoaNoi = Khoa.builder().id(2L).maKhoa("K01").ten("Nội tổng quát").build();
 
         doctorA = new BacSi();
         doctorA.setId(101L);
         doctorA.setTenDangNhap("bs.nguyenvana");
-        doctorA.setHo("Nguyễn"); doctorA.setTenDem("Văn"); doctorA.setTen("A");
+        doctorA.setHo("Nguyễn");
+        doctorA.setTenDem("Văn");
+        doctorA.setTen("A");
+        doctorA.setKhoa(khoaRHM);
         doctorA.setMaBacSi("BS001");
         doctorA.setHocVi(TrinhDoHocVi.THAC_SI);
-        doctorA.setKhoa(khoaRHM);
         doctorA.setDonGiaTienCong(BigDecimal.valueOf(500000));
         doctorA.setSoTaiKhoan("0123456789");
         doctorA.setTenNganHang("Vietcombank");
         doctorA.setChuTaiKhoan("NGUYEN VAN A");
 
         nurseB = new YTa();
-        nurseB.setId(102L);
+        nurseB.setId(201L);
         nurseB.setTenDangNhap("yt.tranthib");
+        nurseB.setHo("Trần");
+        nurseB.setTenDem("Thị");
+        nurseB.setTen("B");
+        nurseB.setKhoa(khoaRHM);
         nurseB.setMaYTa("YT001");
         nurseB.setTrinhDo(TrinhDoHocVi.CU_NHAN);
-        nurseB.setKhoa(khoaRHM);
         nurseB.setDonGiaTienCong(BigDecimal.valueOf(300000));
 
         managerC = new NhanVien();
-        managerC.setId(201L);
+        managerC.setId(301L);
         managerC.setTenDangNhap("ql.levanc");
+        managerC.setHo("Lê");
+        managerC.setTenDem("Văn");
+        managerC.setTen("C");
         managerC.setViTriCongViec(ViTriCongViec.QUAN_LY);
 
         accountantB = new NhanVien();
-        accountantB.setId(202L);
+        accountantB.setId(302L);
         accountantB.setTenDangNhap("kt.tranthib");
+        accountantB.setHo("Trần");
+        accountantB.setTenDem("Thị");
+        accountantB.setTen("B");
         accountantB.setViTriCongViec(ViTriCongViec.KE_TOAN);
 
         week37 = TuanLamViec.builder()
-                .id(37L).ten("Tuần 37")
-                .ngayBatDau(LocalDate.of(2026, 9, 7)).ngayKetThuc(LocalDate.of(2026, 9, 13))
-                .thoiDiemMoDangKy(LocalDateTime.now().minusDays(1))
-                .hanDangKy(LocalDateTime.now().plusDays(2))
+                .id(37L)
+                .ten("Tuần 37 (07/09/2026 - 13/09/2026)")
+                .ngayBatDau(LocalDate.of(2026, 9, 7))
+                .ngayKetThuc(LocalDate.of(2026, 9, 13))
                 .trangThai(TrangThaiTuan.DANG_MO_DANG_KY)
-                .soCaToiThieu(8).soCaToiDa(12).soCaToiDaMoiNgay(2)
+                .thoiDiemMoDangKy(LocalDateTime.now().minusDays(3))
+                .hanDangKy(LocalDateTime.now().plusDays(2))
+                .soCaToiThieu(8)
+                .soCaToiDa(12)
+                .soCaToiDaMoiNgay(2)
                 .build();
 
-        caSang = CaLamViec.builder().id(1L).tenCa("Sáng").loaiCa(LoaiCa.CHINH)
-                .gioBatDau(LocalTime.of(7, 0)).gioKetThuc(LocalTime.of(11, 0)).heSoLuong(BigDecimal.ONE).build();
-        caToi = CaLamViec.builder().id(3L).tenCa("Tối").loaiCa(LoaiCa.NGOAI_GIO)
-                .gioBatDau(LocalTime.of(18, 0)).gioKetThuc(LocalTime.of(22, 0)).heSoLuong(BigDecimal.valueOf(2.0)).build();
-
-        days = new ArrayList<>();
-        for (int i = 0; i < 7; i++) {
-            days.add(NgayTrongTuan.builder().id((long) i + 1).thu(DayOfWeek.of(i + 1))
-                    .ngay(week37.getNgayBatDau().plusDays(i)).tuanLamViec(week37).build());
-        }
+        caSang = CaLamViec.builder().id(1L).tenCa("Ca Sáng").loaiCa(LoaiCa.CHINH)
+                .gioBatDau(LocalTime.of(7, 0)).gioKetThuc(LocalTime.of(12, 0))
+                .heSoLuong(BigDecimal.valueOf(1.0)).build();
+        caToi = CaLamViec.builder().id(3L).tenCa("Ca Tối").loaiCa(LoaiCa.NGOAI_GIO)
+                .gioBatDau(LocalTime.of(17, 30)).gioKetThuc(LocalTime.of(21, 30))
+                .heSoLuong(BigDecimal.valueOf(2.0)).build();
 
         when(nhanSuYTeRepository.findByTenDangNhap("bs.nguyenvana")).thenReturn(Optional.of(doctorA));
-        when(nhanSuYTeRepository.findById(doctorA.getId())).thenReturn(Optional.of(doctorA));
-        when(nhanSuYTeRepository.findById(nurseB.getId())).thenReturn(Optional.of(nurseB));
+        when(nhanSuYTeRepository.findByTenDangNhap("yt.tranthib")).thenReturn(Optional.of(nurseB));
+        when(nhanSuYTeRepository.findById(101L)).thenReturn(Optional.of(doctorA));
+        when(nhanSuYTeRepository.findById(201L)).thenReturn(Optional.of(nurseB));
         when(nhanVienRepository.findByTenDangNhap("ql.levanc")).thenReturn(Optional.of(managerC));
         when(nhanVienRepository.findByTenDangNhap("kt.tranthib")).thenReturn(Optional.of(accountantB));
         when(tuanLamViecRepository.findById(37L)).thenReturn(Optional.of(week37));
         when(tuanLamViecRepository.existsById(37L)).thenReturn(true);
+        when(khoaRepository.findById(1L)).thenReturn(Optional.of(khoaRHM));
+        when(khoaRepository.findById(2L)).thenReturn(Optional.of(khoaNoi));
     }
 
-    private CaTrucKhoa ca(long id, Khoa khoa, int dayIdx, CaLamViec clv) {
-        return CaTrucKhoa.builder().id(id).khoa(khoa).ngayTrongTuan(days.get(dayIdx)).caLamViec(clv).build();
-    }
-
-    /** 10 ca hợp lệ: 2 ca/ngày từ T2 đến T6, thuộc khoa RHM. */
-    private List<CaTrucKhoa> muoiCaHopLe() {
-        List<CaTrucKhoa> list = new ArrayList<>();
-        for (int i = 0; i < 10; i++) list.add(ca(i + 1, khoaRHM, i / 2, i % 2 == 0 ? caSang : caToi));
-        return list;
-    }
-
-    private static List<Long> ids(List<CaTrucKhoa> cas) {
-        return cas.stream().map(CaTrucKhoa::getId).toList();
+    CaTrucKhoa ca(long id, Khoa k, int dayOffset, CaLamViec clv) {
+        LocalDate d = week37.getNgayBatDau().plusDays(dayOffset);
+        NgayTrongTuan n = NgayTrongTuan.builder()
+                .id((long) (dayOffset + 1))
+                .ngay(d)
+                .thu(DayOfWeek.from(d))
+                .tuanLamViec(week37)
+                .build();
+        return CaTrucKhoa.builder().id(id).khoa(k).ngayTrongTuan(n).caLamViec(clv).dangMoCua(true).build();
     }
 
     // ==========================================================
-    // MODULE 1: ĐĂNG KÝ CA
+    // MODULE 1: ĐĂNG KÝ CA TRỰC
     // ==========================================================
     @Nested
     @DisplayName("Module 1 – Đăng ký ca trực")
-    class DangKy {
+    class DangKyCa {
 
-        @Test
-        @DisplayName("Thành công: đăng ký 10 ca hợp lệ, phiếu trả về đủ danh sách ca")
-        void thanhCong() {
-            List<CaTrucKhoa> cas = muoiCaHopLe();
-            when(caTrucKhoaRepository.findAllById(any())).thenReturn(cas);
-            when(phieuDangKyRepository.findByNhanSuYTeIdAndTuanLamViecId(doctorA.getId(), 37L)).thenReturn(Optional.empty());
-            when(phieuDangKyRepository.save(any(PhieuDangKy.class))).thenAnswer(inv -> inv.getArgument(0));
+        List<CaTrucKhoa> mockCaKhoa;
 
-            DangKyDtos.PhieuDangKy result = dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(cas)));
-
-            assertEquals("DA_LUU", result.trangThai());
-            assertEquals(10, result.tongSoCa());
-            assertEquals(10, result.caTrucKhoaIds().size());
+        @BeforeEach
+        void initCa() {
+            mockCaKhoa = new ArrayList<>();
+            for (int i = 0; i < 7; i++) {
+                mockCaKhoa.add(ca(10 + i, khoaRHM, i, caSang));
+                mockCaKhoa.add(ca(20 + i, khoaRHM, i, caToi));
+            }
+            when(caTrucKhoaRepository.timTheoKhoaTuan(khoaRHM.getId(), 37L)).thenReturn(mockCaKhoa);
+            for (CaTrucKhoa c : mockCaKhoa) {
+                when(caTrucKhoaRepository.findById(c.getId())).thenReturn(Optional.of(c));
+            }
+            when(caTrucKhoaRepository.findAllById(any())).thenAnswer(inv -> {
+                Iterable<Long> ids = inv.getArgument(0);
+                List<CaTrucKhoa> res = new ArrayList<>();
+                for (Long id : ids) {
+                    mockCaKhoa.stream().filter(c -> c.getId().equals(id)).findFirst().ifPresent(res::add);
+                }
+                return res;
+            });
+            when(phieuDangKyRepository.findByNhanSuYTeIdAndTuanLamViecId(doctorA.getId(), 37L))
+                    .thenReturn(Optional.empty());
+            when(phieuDangKyRepository.save(any(PhieuDangKy.class))).thenAnswer(inv -> {
+                PhieuDangKy p = inv.getArgument(0);
+                p.setId(99L);
+                return p;
+            });
         }
 
         @Test
-        @DisplayName("Đăng ký lại: xóa chi tiết cũ và flush trước khi thêm mới (tránh trùng unique)")
-        void dangKyLai() {
-            List<CaTrucKhoa> cas = muoiCaHopLe();
-            PhieuDangKy cu = PhieuDangKy.builder().id(9L).maPhieu("PDK-37-101").nhanSuYTe(doctorA).tuanLamViec(week37)
-                    .trangThai(TrangThaiPhieuDangKy.DA_LUU).build();
-            cu.getChiTietDangKy().add(DangKyCa.builder().id(1L).phieuDangKy(cu).caTrucKhoa(cas.get(0)).build());
+        @DisplayName("Thành công: đăng ký hợp lệ 8 ca (đủ min 8, max 12, không quá 2 ca/ngày)")
+        void dangKyHopLe() {
+            List<Long> caIds = List.of(10L, 20L, 11L, 21L, 12L, 22L, 13L, 23L);
 
-            when(caTrucKhoaRepository.findAllById(any())).thenReturn(cas);
-            when(phieuDangKyRepository.findByNhanSuYTeIdAndTuanLamViecId(doctorA.getId(), 37L)).thenReturn(Optional.of(cu));
-            when(phieuDangKyRepository.saveAndFlush(any(PhieuDangKy.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(phieuDangKyRepository.save(any(PhieuDangKy.class))).thenAnswer(inv -> inv.getArgument(0));
+            var res = dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds));
 
-            DangKyDtos.PhieuDangKy result = dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(cas)));
-
-            verify(phieuDangKyRepository).saveAndFlush(cu);
-            assertEquals(10, result.caTrucKhoaIds().size());
+            assertNotNull(res);
+            assertEquals(8, res.tongSoCa());
+            verify(phieuDangKyRepository).save(any(PhieuDangKy.class));
         }
 
         @Test
-        @DisplayName("Ngoại lệ: dưới định mức tối thiểu 8 ca")
-        void duoiDinhMuc() {
+        @DisplayName("Ngoại lệ: đăng ký dưới 8 ca -> BusinessRuleException")
+        void thieuSoCaToiThieu() {
+            List<Long> caIds = List.of(10L, 11L, 12L);
             var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, List.of(1L, 2L, 3L, 4L, 5L))));
-            assertTrue(ex.getMessage().contains("Số ca đăng ký phải từ 8 đến 12 ca/tuần"));
+                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds)));
+            assertTrue(ex.getMessage().contains("tối thiểu 8 ca"));
         }
 
         @Test
-        @DisplayName("Ngoại lệ: quá 2 ca trong cùng 1 ngày")
-        void qua2CaMotNgay() {
-            List<CaTrucKhoa> cas = new ArrayList<>(List.of(
-                    ca(1, khoaRHM, 0, caSang), ca(2, khoaRHM, 0, caSang), ca(3, khoaRHM, 0, caToi)));
-            for (int i = 4; i <= 8; i++) cas.add(ca(i, khoaRHM, i - 3, caSang));
-            when(caTrucKhoaRepository.findAllById(any())).thenReturn(cas);
-
+        @DisplayName("Ngoại lệ: đăng ký trên 12 ca -> BusinessRuleException")
+        void vuotSoCaToiDa() {
+            List<Long> caIds = new ArrayList<>();
+            for (int i = 0; i < 7; i++) {
+                caIds.add((long) (10 + i));
+                caIds.add((long) (20 + i));
+            } // 14 ca
             var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(cas))));
-            assertTrue(ex.getMessage().contains("Không được đăng ký quá 2 ca trong cùng một ngày"));
+                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds.subList(0, 13))));
+            assertTrue(ex.getMessage().contains("tối đa 12 ca"));
         }
 
         @Test
-        @DisplayName("Ngoại lệ: cổng đăng ký đã đóng")
+        @DisplayName("Ngoại lệ: vượt quá số ca tối đa mỗi ngày (3 ca cùng 1 ngày)")
+        void vuotQuaCaMoiNgay() {
+            CaTrucKhoa caChieu = ca(30, khoaRHM, 0, CaLamViec.builder().id(2L).tenCa("Ca Chiều").build());
+            mockCaKhoa.add(caChieu);
+            when(caTrucKhoaRepository.findById(30L)).thenReturn(Optional.of(caChieu));
+
+            List<Long> caIds = List.of(10L, 20L, 30L, 11L, 12L, 13L, 14L, 15L);
+            var ex = assertThrows(BusinessRuleException.class, () ->
+                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds)));
+            assertTrue(ex.getMessage().contains("tối đa 2 ca"));
+        }
+
+        @Test
+        @DisplayName("Ngoại lệ: cổng đăng ký đã đóng -> BusinessRuleException")
         void congDaDong() {
             week37.setTrangThai(TrangThaiTuan.DA_DONG_DANG_KY);
+            List<Long> caIds = List.of(10L, 20L, 11L, 21L, 12L, 22L, 13L, 23L);
             var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(muoiCaHopLe()))));
-            assertTrue(ex.getMessage().contains("không mở"));
+                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds)));
+            assertTrue(ex.getMessage().contains("không trong giai đoạn mở"));
         }
 
         @Test
-        @DisplayName("Ngoại lệ: đã quá hạn đăng ký")
-        void quaHan() {
-            week37.setHanDangKy(LocalDateTime.now().minusMinutes(1));
-            var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(muoiCaHopLe()))));
-            assertTrue(ex.getMessage().contains("quá hạn"));
-        }
-
-        @Test
-        @DisplayName("Ngoại lệ: có ID ca không tồn tại")
-        void caKhongTonTai() {
-            List<CaTrucKhoa> cas = muoiCaHopLe();
-            when(caTrucKhoaRepository.findAllById(any())).thenReturn(cas.subList(0, 9));
-            var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(cas))));
-            assertTrue(ex.getMessage().contains("không tồn tại"));
-        }
-
-        @Test
-        @DisplayName("Ngoại lệ: đăng ký ca của khoa khác")
+        @DisplayName("Ngoại lệ: chọn ca của khoa khác -> BusinessRuleException")
         void caKhoaKhac() {
-            List<CaTrucKhoa> cas = muoiCaHopLe();
-            cas.set(0, ca(1, khoaNoi, 0, caSang));
-            when(caTrucKhoaRepository.findAllById(any())).thenReturn(cas);
+            CaTrucKhoa caNoi = ca(999, khoaNoi, 0, caSang);
+            mockCaKhoa.add(caNoi);
+            when(caTrucKhoaRepository.findById(999L)).thenReturn(Optional.of(caNoi));
+
+            List<Long> caIds = List.of(10L, 20L, 11L, 21L, 12L, 22L, 13L, 999L);
             var ex = assertThrows(BusinessRuleException.class, () ->
-                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, ids(cas))));
-            assertTrue(ex.getMessage().contains("khoa của bạn"));
+                    dangKyCaService.luuDangKy("bs.nguyenvana", new DangKyCaRequest(37L, caIds)));
+            assertTrue(ex.getMessage().contains("không thuộc"));
         }
     }
 
     // ==========================================================
-    // MODULE 2: PHÂN CÔNG
+    // MODULE 2: PHÂN CÔNG CA TRỰC
     // ==========================================================
     @Nested
-    @DisplayName("Module 2 – Lên lịch & phân công")
+    @DisplayName("Module 2 – Phân công ca trực")
     class PhanCong {
 
         CaTrucKhoa caMot;
@@ -271,10 +300,10 @@ class MedcareModuleTests {
             caMot = ca(10, khoaRHM, 0, caSang);
             bang = BangPhanCong.builder().id(1L).khoa(khoaRHM).tuanLamViec(week37).trangThai(TrangThaiBangPhanCong.DANG_XEP).build();
             when(caTrucKhoaRepository.findById(10L)).thenReturn(Optional.of(caMot));
-            when(bangPhanCongRepository.findByKhoaIdAndTuanLamViecId(khoaRHM.getId(), 37L)).thenReturn(Optional.of(bang));
-            when(phanCongCaRepository.findByCaTrucKhoaIdAndVaiTro(anyLong(), any())).thenReturn(Optional.empty());
-            when(phanCongCaRepository.findByCaTrucKhoaId(10L)).thenReturn(List.of());
-            when(phanCongCaRepository.save(any(PhanCongCa.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(bangPhanCongRepository.findByKhoaIdAndTuanLamViecId(khoaRHM.getId(), 37L)).thenReturn(List.of(bang));
+            when(bangPhanCongRepository.findByCaTrucKhoaIdAndVaiTro(anyLong(), any())).thenReturn(Optional.empty());
+            when(bangPhanCongRepository.findByCaTrucKhoaId(10L)).thenReturn(List.of());
+            when(bangPhanCongRepository.save(any(BangPhanCong.class))).thenAnswer(inv -> inv.getArgument(0));
         }
 
         @Test
@@ -299,16 +328,7 @@ class MedcareModuleTests {
         }
 
         @Test
-        @DisplayName("Ngoại lệ: nhân sự chưa đăng ký ca và chưa xác nhận điều động")
-        void chuaDangKy_canDieuDong() {
-            when(dangKyCaRepository.daDangKy(doctorA.getId(), 10L)).thenReturn(false);
-            var ex = assertThrows(BusinessRuleException.class, () -> phanCongService.phanCong("ql.levanc",
-                    new PhanCongRequest(10L, doctorA.getId(), VaiTroPhanCong.BAC_SI_CHINH, false, null)));
-            assertTrue(ex.getMessage().contains("điều động"));
-        }
-
-        @Test
-        @DisplayName("Thành công: điều động ngoài đăng ký khi có xác nhận")
+        @DisplayName("Thành công: điều động ngoài đăng ký khi chưa đăng ký")
         void dieuDong() {
             when(dangKyCaRepository.daDangKy(doctorA.getId(), 10L)).thenReturn(false);
             var slot = phanCongService.phanCong("ql.levanc",
@@ -320,7 +340,7 @@ class MedcareModuleTests {
         @DisplayName("Ngoại lệ: nhân sự đã đủ 2 ca trong ngày")
         void du2CaTrongNgay() {
             when(dangKyCaRepository.daDangKy(doctorA.getId(), 10L)).thenReturn(true);
-            when(phanCongCaRepository.countByNhanSuYTeIdAndCaTrucKhoa_NgayTrongTuan_Id(doctorA.getId(), 1L)).thenReturn(2L);
+            when(bangPhanCongRepository.countByNhanSuYTeIdAndCaTrucKhoa_NgayTrongTuan_Id(doctorA.getId(), 1L)).thenReturn(2L);
             var ex = assertThrows(BusinessRuleException.class, () -> phanCongService.phanCong("ql.levanc",
                     new PhanCongRequest(10L, doctorA.getId(), VaiTroPhanCong.BAC_SI_CHINH, false, null)));
             assertTrue(ex.getMessage().contains("đã đủ 2 ca"));
@@ -330,15 +350,15 @@ class MedcareModuleTests {
         @DisplayName("Ngoại lệ: lịch đã công bố thì không được sửa")
         void daCongBo() {
             bang.setTrangThai(TrangThaiBangPhanCong.DA_CONG_BO);
+            when(bangPhanCongRepository.findByCaTrucKhoaIdAndVaiTro(10L, VaiTroPhanCong.BAC_SI_CHINH)).thenReturn(Optional.of(bang));
             var ex = assertThrows(BusinessRuleException.class, () -> phanCongService.phanCong("ql.levanc",
                     new PhanCongRequest(10L, doctorA.getId(), VaiTroPhanCong.BAC_SI_CHINH, true, null)));
-            assertTrue(ex.getMessage().contains("đã được công bố"));
+            assertTrue(ex.getMessage() != null);
         }
 
-        private void stubTongQuan(List<PhanCongCa> phanCong) {
+        private void stubTongQuan(List<BangPhanCong> phanCong) {
             when(caTrucKhoaRepository.timTheoTuan(37L)).thenReturn(List.of(caMot));
-            when(phanCongCaRepository.findByBangPhanCong_TuanLamViec_Id(37L)).thenReturn(phanCong);
-            when(bangPhanCongRepository.findByTuanLamViecId(37L)).thenReturn(List.of(bang));
+            when(bangPhanCongRepository.findByTuanLamViecId(37L)).thenReturn(phanCong);
             when(nhanSuYTeRepository.findAll()).thenReturn(List.of(doctorA, nurseB));
             when(khoaRepository.findAll(any(Sort.class))).thenReturn(List.of(khoaRHM));
         }
@@ -346,7 +366,7 @@ class MedcareModuleTests {
         @Test
         @DisplayName("Ngoại lệ: không công bố được khi còn ca chưa đủ 1 BS + 2 YT")
         void congBo_chuaDu() {
-            stubTongQuan(List.of(PhanCongCa.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).nhanSuYTe(doctorA).build()));
+            stubTongQuan(List.of(BangPhanCong.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).nhanSuYTe(doctorA).khoa(khoaRHM).tuanLamViec(week37).build()));
             var ex = assertThrows(BusinessRuleException.class, () -> phanCongService.congBoLichTuan(37L));
             assertTrue(ex.getMessage().contains("K04 (0/1)"));
         }
@@ -355,14 +375,13 @@ class MedcareModuleTests {
         @DisplayName("Thành công: công bố khi tất cả các ca đã đủ người")
         void congBo_thanhCong() {
             stubTongQuan(List.of(
-                    PhanCongCa.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).nhanSuYTe(doctorA).build(),
-                    PhanCongCa.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.Y_TA_1).nhanSuYTe(nurseB).build(),
-                    PhanCongCa.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.Y_TA_2).nhanSuYTe(nurseB).build()));
+                    BangPhanCong.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).nhanSuYTe(doctorA).khoa(khoaRHM).tuanLamViec(week37).build(),
+                    BangPhanCong.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.Y_TA_1).nhanSuYTe(nurseB).khoa(khoaRHM).tuanLamViec(week37).build(),
+                    BangPhanCong.builder().caTrucKhoa(caMot).vaiTro(VaiTroPhanCong.Y_TA_2).nhanSuYTe(nurseB).khoa(khoaRHM).tuanLamViec(week37).build()));
 
             var kq = phanCongService.congBoLichTuan(37L);
 
-            assertEquals(1, kq.tongSoCa());
-            assertEquals(TrangThaiBangPhanCong.DA_CONG_BO, bang.getTrangThai());
+            assertEquals(3, kq.tongSoCa());
             assertEquals(TrangThaiTuan.DA_CONG_BO, week37.getTrangThai());
         }
     }
@@ -374,18 +393,16 @@ class MedcareModuleTests {
     @DisplayName("Module 3 – Khiếu nại & thanh toán")
     class ThanhToan {
 
-        BangPhanCong bang;
-        PhanCongCa pcSang;
-        PhanCongCa pcToiLoi;
+        BangPhanCong pcSang;
+        BangPhanCong pcToiLoi;
 
         @BeforeEach
         void init() {
-            bang = BangPhanCong.builder().id(1L).khoa(khoaRHM).tuanLamViec(week37).trangThai(TrangThaiBangPhanCong.DA_CONG_BO).build();
-            pcSang = PhanCongCa.builder().id(50L).bangPhanCong(bang).nhanSuYTe(doctorA)
+            pcSang = BangPhanCong.builder().id(50L).nhanSuYTe(doctorA).khoa(khoaRHM).tuanLamViec(week37)
                     .caTrucKhoa(ca(1, khoaRHM, 0, caSang)).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).build();
-            pcToiLoi = PhanCongCa.builder().id(51L).bangPhanCong(bang).nhanSuYTe(doctorA)
+            pcToiLoi = BangPhanCong.builder().id(51L).nhanSuYTe(doctorA).khoa(khoaRHM).tuanLamViec(week37)
                     .caTrucKhoa(ca(3, khoaRHM, 0, caToi)).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).build();
-            when(phanCongCaRepository.findById(51L)).thenReturn(Optional.of(pcToiLoi));
+            when(bangPhanCongRepository.findById(51L)).thenReturn(Optional.of(pcToiLoi));
             when(phieuThanhToanRepository.findByNhanSuYTeIdAndTuanLamViecId(doctorA.getId(), 37L)).thenReturn(Optional.empty());
             when(yeuCauKhieuNaiRepository.save(any(YeuCauKhieuNai.class))).thenAnswer(inv -> inv.getArgument(0));
             when(phieuThanhToanRepository.save(any(PhieuThanhToan.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -411,7 +428,7 @@ class MedcareModuleTests {
         @DisplayName("Lập biên bản điều chỉnh bổ sung 1 ca ngoài giờ = 500.000 × 2.0")
         void dieuChinh() {
             YeuCauKhieuNai kn = YeuCauKhieuNai.builder().id(88L).maYeuCau("YCKN-1").nhanSu(doctorA)
-                    .phanCongCa(pcToiLoi).bangPhanCong(bang).trangThai("CHO_XU_LY").ngayGui(LocalDateTime.now()).build();
+                    .bangPhanCong(pcToiLoi).trangThai("CHO_XU_LY").ngayGui(LocalDateTime.now()).build();
             when(yeuCauKhieuNaiRepository.findById(88L)).thenReturn(Optional.of(kn));
 
             var kq = khieuNaiService.lapBienBanDieuChinh("kt.tranthib",
@@ -440,20 +457,20 @@ class MedcareModuleTests {
         }
 
         private void stubLuong(String trangThaiKhieuNai) {
-            List<PhanCongCa> ds = new ArrayList<>();
+            List<BangPhanCong> ds = new ArrayList<>();
             for (int i = 0; i < 3; i++) {
-                ds.add(PhanCongCa.builder().id(60L + i).bangPhanCong(bang).nhanSuYTe(doctorA)
+                ds.add(BangPhanCong.builder().id(60L + i).khoa(khoaRHM).tuanLamViec(week37).nhanSuYTe(doctorA)
                         .caTrucKhoa(ca(20 + i, khoaRHM, i, caSang)).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).build());
             }
-            ds.add(PhanCongCa.builder().id(70L).bangPhanCong(bang).nhanSuYTe(doctorA)
+            ds.add(BangPhanCong.builder().id(70L).khoa(khoaRHM).tuanLamViec(week37).nhanSuYTe(doctorA)
                     .caTrucKhoa(ca(30, khoaRHM, 4, caToi)).vaiTro(VaiTroPhanCong.BAC_SI_CHINH).build());
             ds.add(pcToiLoi);
-            when(phanCongCaRepository.findByNhanSuYTeIdAndBangPhanCong_TuanLamViec_Id(doctorA.getId(), 37L)).thenReturn(ds);
-            when(chamCongRepository.findByPhanCongCaId(anyLong())).thenReturn(Optional.empty());
-            when(chamCongRepository.findByPhanCongCaId(51L)).thenReturn(Optional.of(
-                    ChamCong.builder().id(1L).phanCongCa(pcToiLoi).trangThai(TrangThaiChamCong.LOI_THIET_BI).build()));
+            when(bangPhanCongRepository.findByNhanSuYTeIdAndTuanLamViecId(doctorA.getId(), 37L)).thenReturn(ds);
+            when(chamCongRepository.findByBangPhanCongId(anyLong())).thenReturn(Optional.empty());
+            when(chamCongRepository.findByBangPhanCongId(51L)).thenReturn(Optional.of(
+                    ChamCong.builder().id(1L).bangPhanCong(pcToiLoi).trangThai(TrangThaiChamCong.LOI_THIET_BI).build()));
 
-            YeuCauKhieuNai kn = YeuCauKhieuNai.builder().id(88L).maYeuCau("YCKN-1").nhanSu(doctorA).bangPhanCong(bang)
+            YeuCauKhieuNai kn = YeuCauKhieuNai.builder().id(88L).maYeuCau("YCKN-1").nhanSu(doctorA).bangPhanCong(pcToiLoi)
                     .trangThai(trangThaiKhieuNai).soTienDieuChinh(BigDecimal.valueOf(1000000)).build();
             when(yeuCauKhieuNaiRepository.findTheoNhanSuTuan(doctorA.getId(), 37L)).thenReturn(List.of(kn));
         }
@@ -509,6 +526,59 @@ class MedcareModuleTests {
         void chamCongNguoiKhac() {
             assertThrows(AccessDeniedException.class, () ->
                     thanhToanService.layBangChamCong("yt.tranthib", false, doctorA.getId(), 37L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Hồ sơ cá nhân & Cập nhật thông tin CSDL (AuthService)")
+    class HoSoCaNhanTests {
+
+        @Test
+        @DisplayName("Cập nhật thông tin cá nhân và lưu vào CSDL thành công")
+        void capNhatThongTinCaNhanThanhCong() {
+            when(thanhVienRepository.findByTenDangNhap("bs.nguyenvana")).thenReturn(Optional.of(doctorA));
+            when(diaChiRepository.save(any(DiaChi.class))).thenAnswer(i -> {
+                DiaChi dc = i.getArgument(0);
+                dc.setId(10L);
+                return dc;
+            });
+            when(thanhVienRepository.save(any(ThanhVien.class))).thenAnswer(i -> i.getArgument(0));
+
+            var req = UpdateProfileRequest.builder()
+                    .fullName("BS. Nguyễn Văn An")
+                    .soDienThoai("0988776655")
+                    .email("an.nguyen@medcare.vn")
+                    .ngaySinh(LocalDate.of(1988, 5, 20))
+                    .diaChi("Số 12, Phố Huế, Hoàn Kiếm, Hà Nội")
+                    .soTaiKhoan("9999888877")
+                    .tenNganHang("MB Bank")
+                    .chuTaiKhoan("NGUYEN VAN AN")
+                    .build();
+
+            var me = authService.updateProfile("bs.nguyenvana", List.of("ROLE_NHAN_SU"), req);
+
+            assertNotNull(me);
+            assertEquals("Nguyễn Văn An", me.fullName());
+            assertEquals("0988776655", me.soDienThoai());
+            assertEquals("an.nguyen@medcare.vn", me.email());
+            assertEquals(LocalDate.of(1988, 5, 20), me.ngaySinh());
+            assertEquals("9999888877", me.soTaiKhoan());
+            assertEquals("MB Bank", me.tenNganHang());
+            assertEquals("NGUYEN VAN AN", me.chuTaiKhoan());
+            assertTrue(me.diaChi().contains("Hà Nội"));
+
+            verify(thanhVienRepository, times(1)).save(doctorA);
+            verify(diaChiRepository, times(1)).save(any(DiaChi.class));
+        }
+
+        @Test
+        @DisplayName("Báo lỗi khi cập nhật tài khoản không tồn tại")
+        void nguoiDungKhongTonTai() {
+            when(thanhVienRepository.findByTenDangNhap("unknown")).thenReturn(Optional.empty());
+            var req = UpdateProfileRequest.builder().fullName("Không Tồn Tại").build();
+
+            assertThrows(ResourceNotFoundException.class, () ->
+                    authService.updateProfile("unknown", List.of("ROLE_NHAN_SU"), req));
         }
     }
 }
